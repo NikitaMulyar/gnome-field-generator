@@ -5,16 +5,16 @@ import json
 TILE_SIZE = 64
 
 TEXTURES = {
-    0: "water.png",
-    1: "dirt.png",
+    0: "milk.png",
+    1: "cheese.png",
     2: "entrance.png",
-    3: "stone.png",
-    4: "gas.png",
-    5: "sand.png",
-    6: "eye.png",
-    7: "portal.png",
-    8: "crystall.png",
-    9: "portal.png",
+    3: "lolipop.png",
+    4: "agusha.png",
+    5: "chocolate.png",
+    6: "mouse.png",
+    7: "portal-in.png",
+    8: "machine.png",
+    9: "portal-out.png",
 }
 
 
@@ -48,9 +48,22 @@ def main():
     for i in range(map2d.height):
         for j in range(map2d.width):
             tile = map2d.tiles[i * map2d.width + j]
+            if tile in [7, 9]:
+                continue
             texture = Image.open(f"src/assets/textures/{TEXTURES[tile]}")
             texture = texture.resize((TILE_SIZE, TILE_SIZE))
             img.paste(texture, (j * TILE_SIZE, i * TILE_SIZE))
+
+    for i in range(map2d.height - 1):
+        for j in range(map2d.width - 1):
+            tile1 = map2d.tiles[(i + 0) * map2d.width + (j + 0)]
+            tile2 = map2d.tiles[(i + 1) * map2d.width + (j + 0)]
+            tile3 = map2d.tiles[(i + 0) * map2d.width + (j + 1)]
+            tile4 = map2d.tiles[(i + 1) * map2d.width + (j + 1)]
+            if all(t in [7, 9] for t in [tile1, tile2, tile3, tile4]):
+                texture = Image.open(f"src/assets/textures/{TEXTURES[tile1]}")
+                texture = texture.resize((TILE_SIZE * 2, TILE_SIZE * 2))
+                img.paste(texture, (j * TILE_SIZE, i * TILE_SIZE))
 
     for wall in map2d.walls:
         tile_i, wall_i = wall
