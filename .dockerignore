@@ -1,0 +1,7 @@
+﻿.venv
+.git
+.gitignore
+map-editor/node_modules
+map-editor/dist
+out/*.png
+*.log

@@ -4,7 +4,27 @@
 
 Редактор нужен, чтобы не писать карту руками: можно задавать размер поля, раскрашивать клетки, ставить стены, находить 2x2-порталы, связывать входы с выходами и скачивать готовый JSON.
 
-## Запуск
+## Запуск через Docker
+
+Из папки `gnome-field-generator`:
+
+```bash
+docker compose up --build map-editor
+```
+
+Локальный адрес:
+
+```text
+http://localhost:3001/
+```
+
+Из корня `C:\NotGnomes` можно поднять сразу игру и редактор:
+
+```bash
+docker compose up --build
+```
+
+## Запуск без Docker
 
 ```bash
 yarn install
@@ -19,18 +39,6 @@ server: {
 }
 ```
 
-Локальный адрес:
-
-```text
-http://localhost:3001/
-```
-
-Если нужно поднять сразу игру и редактор, из корня `C:\NotGnomes` запустите:
-
-```powershell
-.\start-local.ps1
-```
-
 ## Команды
 
 ```bash
@@ -43,6 +51,7 @@ yarn lint     # ESLint с автоисправлениями
 ## Основные файлы
 
 ```text
+Dockerfile                       # Node/Yarn-образ редактора
 src/pages/index.vue              # собирает экран редактора из компонентов
 src/stores/app.js                # состояние карты и логика сохранения/загрузки
 src/components/DimensionControls.vue
@@ -107,14 +116,7 @@ src/components/SaveAndLoad.vue
 7 7      9 9
 ```
 
-`7` - вход, `9` - выход. После того как такие блоки нарисованы, блок `Portals` позволяет связать каждый вход с выходом. При сохранении связь попадет в поле `portals`:
-
-```json
-{
-  "entrance": [100, 101, 132, 133],
-  "exit": [300, 301, 332, 333]
-}
-```
+`7` - вход, `9` - выход. После того как такие блоки нарисованы, блок `Portals` позволяет связать каждый вход с выходом. При сохранении связь попадет в поле `portals`.
 
 ## Выходной JSON
 
@@ -139,28 +141,18 @@ src/components/SaveAndLoad.vue
 - `../src/assets/map.json` - для генерации PNG.
 - `../../gnome-field/gnome-field/public/map.json` - для самой игры.
 
-Если работать через корневый `sync-map.ps1`, достаточно положить JSON в `gnome-field-generator/src/assets/map.json`, а скрипт сам обновит файлы игры.
+Если работать через корневой Docker Compose, достаточно положить JSON в `gnome-field-generator/src/assets/map.json`, а затем выполнить:
+
+```bash
+docker compose --profile tools run --rm map-sync
+```
 
 ## Локальный режим и GitHub Pages
 
-Локально редактор работает от корня сайта:
-
-```text
-http://localhost:3001/
-```
-
-При деплое `deploy.sh` собирает приложение с:
+Локально редактор работает от корня сайта. При деплое `deploy.sh` собирает приложение с:
 
 ```bash
 VITE_BASE_PATH=/gnome-field-generator/
 ```
 
 Это оставляет GitHub Pages рабочим, но не мешает нормальному локальному запуску.
-
-## Что важно помнить при доработке
-
-- Главная логика редактора лежит в `src/stores/app.js`.
-- `Cell` содержит только `type` и `walls`; игровые поля вроде `visibility` редактору не нужны.
-- `load(file)` сейчас восстанавливает размеры и клетки, но не пересобирает `portalPairs` из `data.portals`.
-- `save()` скачивает файл через временную ссылку в браузере, серверной части у редактора нет.
-- `deploy.sh` собирает `dist/` и пушит его в ветку `gh-pages` репозитория `GregoryKogan/gnome-field-generator`.

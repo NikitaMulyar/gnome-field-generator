@@ -1,0 +1,26 @@
+﻿services:
+  map-editor:
+    build:
+      context: ./map-editor
+    ports:
+      - "3001:3001"
+    environment:
+      VITE_BASE_PATH: /
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./map-editor:/app
+      - map_editor_node_modules:/app/node_modules
+    command: yarn dev --host 0.0.0.0
+
+  map-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    volumes:
+      - .:/work
+    command: python src/generate.py
+
+volumes:
+  map_editor_node_modules:

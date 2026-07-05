@@ -11,73 +11,53 @@
 
 ```text
 gnome-field-generator/
+  docker-compose.yml        # запуск редактора и Python-генератора
+  Dockerfile                # Python-образ для generate.py
   src/
-    generate.py              # рендерит PNG-карту из JSON и текстур
+    generate.py             # рендерит PNG-карту из JSON и текстур
     assets/
-      map.json               # входная карта для generate.py
-      textures/              # картинки клеток и стен
+      map.json              # входная карта для generate.py
+      textures/             # картинки клеток и стен
   out/
-    map-2024.png             # сохраненные примеры/версии карт
+    map-2024.png            # сохраненные примеры/версии карт
     map-2025.png
-  map-editor/                # Vue/Vuetify-редактор map.json
-  requirements.txt           # Python-зависимости для generate.py
+  map-editor/               # Vue/Vuetify-редактор map.json
+  requirements.txt          # Python-зависимости для generate.py
 ```
 
-## Быстрый старт
+## Запуск через Docker
 
-### Запустить весь проект локально
-
-Из общей папки `C:\NotGnomes`:
-
-```powershell
-.\start-local.ps1
-```
-
-После запуска:
-
-- игра будет на `http://localhost:3000/`
-- редактор карты будет на `http://localhost:3001/`
-
-### Запустить только редактор
+Из этой папки можно поднять редактор карты отдельно:
 
 ```bash
-cd map-editor
-yarn install
-yarn dev
+docker compose up --build map-editor
 ```
 
-Локальный адрес редактора:
+Редактор будет доступен здесь:
 
 ```text
 http://localhost:3001/
 ```
 
-Подробности по редактору лежат в [map-editor/README.md](map-editor/README.md).
+Из корня `C:\NotGnomes` можно поднять сразу игру и редактор:
 
-## Сгенерировать PNG-карту
-
-Скрипт использует пути относительно корня `gnome-field-generator`, поэтому запускать его нужно из этой папки:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python src\generate.py
+```bash
+docker compose up --build
 ```
 
-Результат появится здесь:
+## Сгенерировать PNG-карту через Docker
 
-```text
-out/map.png
+Только генерация `out/map.png`:
+
+```bash
+docker compose --profile tools run --rm map-generator
 ```
 
-Удобнее всего из корня `C:\NotGnomes` запускать готовый скрипт:
+Из корня `C:\NotGnomes` можно сразу сгенерировать PNG и скопировать карту в игру:
 
-```powershell
-.\sync-map.ps1
+```bash
+docker compose --profile tools run --rm map-sync
 ```
-
-Он пересоберет PNG и скопирует `map.json`/`map.png` в игру.
 
 ## Формат `map.json`
 
@@ -116,8 +96,6 @@ out/map.png
 
 ## Типы клеток
 
-Одни и те же числовые коды используются редактором, игрой и генератором картинки.
-
 | Код | Тип в игре | Текущая текстура генератора |
 | --- | --- | --- |
 | `0` | `Water` | `milk.png` |
@@ -130,8 +108,6 @@ out/map.png
 | `7` | `PortalEntrance` | `portal-in.png` |
 | `8` | `Target` | `machine.png` |
 | `9` | `PortalExit` | `portal-out.png` |
-
-Названия в коде игры более технические, а имена PNG-файлов отражают текущую тему оформления. Числовые коды лучше не менять без одновременной правки игры, редактора и генератора.
 
 ## Как работает `src/generate.py`
 
@@ -147,17 +123,6 @@ out/map.png
 ```python
 TILE_SIZE = 64
 ```
-
-## Как обновить карту игры
-
-Короткая шпаргалка:
-
-1. Открыть `map-editor`.
-2. Нарисовать или загрузить карту.
-3. Нажать `save`.
-4. Скопировать скачанный `map.json` в `src/assets/map.json`.
-5. Из корня `C:\NotGnomes` запустить `./sync-map.ps1`.
-6. Запустить игру и проверить, что клики совпадают с картинкой.
 
 ## Важные ограничения
 
