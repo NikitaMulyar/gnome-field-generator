@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <v-row @mouseover="highlight" @mouseleave="disableHighlight">
         <v-col cols="6" align-self="center">
             <v-select v-model="selectedEntrance" :items="entranceOptions" variant="underlined" hide-details
@@ -14,7 +14,6 @@
 <script setup>
 import { useAppStore } from '@/stores/app';
 import { shallowRef } from 'vue';
-import { consoleError } from 'vuetify/lib/util/console.mjs';
 
 const store = useAppStore();
 const props = defineProps(['i']);
@@ -27,15 +26,26 @@ const exitsOptions = computed(() => {
     return exits.value.map((_, index) => 'Exit ' + (index + 1));
 });
 
-const selectedExit = shallowRef('');
+const getStoredExitOption = () => {
+    const pair = store.portalPairs.find((pair) => pair.startsWith(props.i + '-'));
+    if (!pair) return '';
+
+    const exitIndex = Number(pair.split('-')[1]);
+    return Number.isInteger(exitIndex) ? 'Exit ' + (exitIndex + 1) : '';
+};
+
+const selectedExit = shallowRef(getStoredExitOption());
 
 watch(() => store.getPortals(true), (newValue, _) => {
     exits.value = newValue;
 });
 
+watch(() => store.portalPairs, () => {
+    selectedExit.value = getStoredExitOption();
+}, { deep: true });
+
 const setExit = ($event) => {
-    store.portalPairs = store.portalPairs.filter((pair) => !pair.startsWith(props.i));
-    store.portalPairs.push(props.i + '-' + (parseInt($event.slice(5)) - 1));
+    store.setPortalPair(props.i, parseInt($event.slice(5)) - 1);
 };
 
 const highlight = () => {
@@ -52,3 +62,4 @@ const disableHighlight = () => {
     store.highlighted = [];
 };
 </script>
+
