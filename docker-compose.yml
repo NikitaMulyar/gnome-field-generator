@@ -1,0 +1,42 @@
+services:
+  map-editor:
+    build:
+      context: ./map-editor
+    ports:
+      - "3001:3001"
+    environment:
+      VITE_BASE_PATH: /
+      VITE_MAP_SYNC_URL: http://localhost:3002/sync-map
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./map-editor:/app
+      - map_editor_node_modules:/app/node_modules
+    command: yarn dev --host 0.0.0.0
+
+  map-sync-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      SYNC_API_PORT: 3002
+      WORK_DIR: /work
+      GAME_DIR: /game
+    volumes:
+      - .:/work
+      - ../gnome-field/gnome-field:/game
+    command: python src/sync_server.py
+
+  map-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    volumes:
+      - .:/work
+    command: python src/generate.py
+
+volumes:
+  map_editor_node_modules:

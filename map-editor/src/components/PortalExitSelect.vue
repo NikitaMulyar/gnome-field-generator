@@ -34,26 +34,20 @@
       const pair = store.portalPairs.find(pair => pair.startsWith(props.i + '-'))
       if (!pair) return ''
       const exitIndex = Number(pair.split('-')[1])
-      return Number.isFinite(exitIndex) ? 'Exit ' + (exitIndex + 1) : ''
+      return Number.isInteger(exitIndex) ? 'Exit ' + (exitIndex + 1) : ''
     },
     set (value) {
-      setExit(value)
+      const exitIndex = value ? Number.parseInt(value.slice(5)) - 1 : -1
+      store.setPortalPair(props.i, exitIndex)
     },
   })
 
-  watch(() => store.getPortals(true), (newValue, _) => {
+  watch(() => store.getPortals(true), newValue => {
     exits.value = newValue
   })
 
-  const setExit = $event => {
-    store.portalPairs = store.portalPairs.filter(pair => !pair.startsWith(props.i + '-'))
-    if (!$event) return
-
-    const exitIndex = Number.parseInt($event.slice(5)) - 1
-    if (Number.isFinite(exitIndex)) store.portalPairs.push(props.i + '-' + exitIndex)
-  }
-
   const highlight = () => {
+    store.highlighted = []
     const entrances = store.getPortals(false)
     if (!entrances[props.i]) return
 

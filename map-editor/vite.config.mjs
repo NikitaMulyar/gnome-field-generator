@@ -12,6 +12,8 @@ import { defineConfig } from 'vite'
 import Layouts from 'vite-plugin-vue-layouts-next'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
+const base = process.env.VITE_BASE_PATH ?? '/'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -75,9 +77,9 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    port: 3001,
   },
-  base: '/gnome-field-generator/',
+  base,
   css: {
     preprocessorOptions: {
       sass: {

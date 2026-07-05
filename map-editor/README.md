@@ -2,7 +2,27 @@
 
 Vue/Vuetify-редактор карты для `gnome-field`.
 
-## Запуск
+## Запуск Через Docker
+
+Из корня `gnome-field-generator`:
+
+```bash
+docker compose up --build
+```
+
+Editor открывается на:
+
+```text
+http://127.0.0.1:3001/
+```
+
+Sync API открывается на:
+
+```text
+http://127.0.0.1:3002/
+```
+
+## Запуск Без Docker
 
 ```bash
 yarn install
@@ -12,13 +32,13 @@ yarn dev
 Адрес:
 
 ```text
-http://127.0.0.1:3000/gnome-field-generator/
+http://127.0.0.1:3001/
 ```
 
-Если порт `3000` уже занят игрой:
+Если нужен base path для Pages:
 
 ```bash
-yarn dev --port 3001
+VITE_BASE_PATH=/gnome-field-generator/ yarn dev
 ```
 
 ## Команды
@@ -40,6 +60,8 @@ yarn preview
 - Пары вентиляции настраиваются в portal controls.
 - `Save` скачивает `map.json`.
 - `Load` загружает существующий `map.json` и восстанавливает portal pairs.
+- Черновик автоматически сохраняется в `localStorage`.
+- `sync to game` отправляет текущую карту в sync API и обновляет game-проект.
 
 ## Формат Карты
 
@@ -63,6 +85,25 @@ yarn preview
 ```
 
 Порядок стен: `up`, `right`, `down`, `left`.
+
+## Sync To Game
+
+Кнопка `sync to game` вызывает:
+
+```text
+http://localhost:3002/sync-map
+```
+
+По умолчанию URL можно переопределить через:
+
+```bash
+VITE_MAP_SYNC_URL=http://localhost:3002/sync-map yarn dev
+```
+
+Sync API сохраняет карту в generator, запускает `src/generate.py`, а потом копирует:
+
+- `src/assets/map.json` -> `../gnome-field/gnome-field/public/map.json`;
+- `out/map.png` -> `../gnome-field/gnome-field/src/assets/map.png`.
 
 ## Типы Клеток
 
