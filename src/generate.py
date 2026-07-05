@@ -64,7 +64,9 @@ def main():
             tile2 = map2d.tiles[(i + 1) * map2d.width + (j + 0)]
             tile3 = map2d.tiles[(i + 0) * map2d.width + (j + 1)]
             tile4 = map2d.tiles[(i + 1) * map2d.width + (j + 1)]
-            if all(t in [7, 9] for t in [tile1, tile2, tile3, tile4]):
+            if tile1 in [7, 9] and all(
+                t == tile1 for t in [tile1, tile2, tile3, tile4]
+            ):
                 texture = Image.open(
                     f"src/assets/textures/{TEXTURE_DIR}/{TEXTURES[tile1]}"
                 ).convert("RGBA")

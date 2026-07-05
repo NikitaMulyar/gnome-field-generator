@@ -47,17 +47,20 @@
 
   const setExit = $event => {
     store.portalPairs = store.portalPairs.filter(pair => !pair.startsWith(props.i + '-'))
-    store.portalPairs.push(props.i + '-' + (Number.parseInt($event.slice(5)) - 1))
+    if (!$event) return
+
+    const exitIndex = Number.parseInt($event.slice(5)) - 1
+    if (Number.isFinite(exitIndex)) store.portalPairs.push(props.i + '-' + exitIndex)
   }
 
   const highlight = () => {
     const entrances = store.getPortals(false)
+    if (!entrances[props.i]) return
 
     for (const [i, j] of entrances[props.i]) store.highlight(i, j)
 
-    if (selectedExit.value) {
-      for (const [i, j] of exits.value[Number.parseInt(selectedExit.value.slice(5)) - 1]) store.highlight(i, j)
-    }
+    const exit = exits.value[Number.parseInt(selectedExit.value.slice(5)) - 1]
+    if (exit) for (const [i, j] of exit) store.highlight(i, j)
   }
 
   const disableHighlight = () => {

@@ -117,15 +117,20 @@ export const useAppStore = defineStore('app', {
     save () {
       const state = new MapState(this.width, this.height)
       state.tiles = this.cells
+      const entrances = this.getPortals(false)
+      const exits = this.getPortals(true)
 
       for (const pair of this.portalPairs) {
         const [inI, outI] = pair.split('-').map(el => {
           const n = Number(el)
           return n === 0 ? n : n || el
         })
+        if (!entrances[inI] || !exits[outI]) {
+          continue
+        }
 
-        const entrance = this.getPortals(false)[inI].map(([i, j]) => this.getIndex(i, j))
-        const exit = this.getPortals(true)[outI].map(([i, j]) => this.getIndex(i, j))
+        const entrance = entrances[inI].map(([i, j]) => this.getIndex(i, j))
+        const exit = exits[outI].map(([i, j]) => this.getIndex(i, j))
         state.portals.push({
           entrance,
           exit,
