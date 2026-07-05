@@ -1,10 +1,10 @@
-#!/usr/bin/env sh
+﻿#!/usr/bin/env sh
 
 # abort on errors
 set -e
 
-# build
-yarn build
+# build for GitHub Pages
+VITE_BASE_PATH=/gnome-field-generator/ yarn build
 
 # navigate into the build output directory
 cd dist

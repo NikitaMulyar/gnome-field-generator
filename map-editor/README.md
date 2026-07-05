@@ -1,79 +1,166 @@
-# Vuetify (Default)
+﻿# map-editor
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+Визуальный редактор `map.json` для `gnome-field`. Это отдельное Vue/Vuetify-приложение внутри репозитория `gnome-field-generator`.
 
-## ❗️ Important Links
+Редактор нужен, чтобы не писать карту руками: можно задавать размер поля, раскрашивать клетки, ставить стены, находить 2x2-порталы, связывать входы с выходами и скачивать готовый JSON.
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
-
-## 💿 Install
-
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
-
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
-
-After completing the installation, your environment is ready for Vuetify development.
-
-## ✨ Features
-
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts](https://github.com/JohnCampionJr/vite-plugin-vue-layouts)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
-
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
-
-## 💡 Usage
-
-This section covers how to start the development server and build your project for production.
-
-### Starting the Development Server
-
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+## Запуск
 
 ```bash
+yarn install
 yarn dev
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+В `vite.config.mjs` локально указан отдельный порт:
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
-
-### Building for Production
-
-To build your project for production, use:
-
-```bash
-yarn build
+```js
+server: {
+  port: 3001
+}
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+Локальный адрес:
 
-Once the build process is completed, your application will be ready for deployment in a production environment.
+```text
+http://localhost:3001/
+```
 
-## 💪 Support Vuetify Development
+Если нужно поднять сразу игру и редактор, из корня `C:\NotGnomes` запустите:
 
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
+```powershell
+.\start-local.ps1
+```
 
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
+## Команды
 
-## 📑 License
-[MIT](http://opensource.org/licenses/MIT)
+```bash
+yarn dev      # dev-сервер Vite
+yarn build    # production-сборка в dist/
+yarn preview  # просмотр production-сборки
+yarn lint     # ESLint с автоисправлениями
+```
 
-Copyright (c) 2016-present Vuetify, LLC
+## Основные файлы
+
+```text
+src/pages/index.vue              # собирает экран редактора из компонентов
+src/stores/app.js                # состояние карты и логика сохранения/загрузки
+src/components/DimensionControls.vue
+src/components/CellTypesControls.vue
+src/components/WallTypeControls.vue
+src/components/TileGrid.vue
+src/components/SingleTile.vue
+src/components/PortalsControls.vue
+src/components/SaveAndLoad.vue
+```
+
+## Как пользоваться
+
+1. `DimensionControls` задает ширину и высоту поля. По умолчанию поле заблокировано от случайного изменения, кнопку с замком нужно открыть вручную.
+2. `CellTypesControls` выбирает тип клетки.
+3. Клик по клетке в `TileGrid` ставит выбранный тип.
+4. `WallTypeControls` переключает режим стен: верхняя, правая, нижняя, левая или очистка стен.
+5. В режиме стен клик по клетке ставит выбранную стену.
+6. `PortalsControls` показывает найденные 2x2-входы и позволяет выбрать для каждого выход.
+7. `SaveAndLoad` сохраняет карту в `map.json` или загружает существующий файл.
+
+## Типы клеток
+
+| Код | Название в редакторе | Смысл для игры |
+| --- | --- | --- |
+| `0` | `Water` | вода/молоко, открывается волной |
+| `1` | `Stone` | обычная проходимая клетка |
+| `2` | `Entrance` | стартовая клетка |
+| `3` | `Cliff` | препятствие/леденец |
+| `4` | `Bomb` | взрыв, превращает область 3x3 в `Cliff` |
+| `5` | `Sand` | песок/шоколад, участвует в волновом открытии |
+| `6` | `Mole` | сканирует область вокруг себя |
+| `7` | `PortalEntrance` | вход в портал, должен быть 2x2-блоком |
+| `8` | `Target` | цель игры |
+| `9` | `PortalExit` | выход из портала, должен быть 2x2-блоком |
+
+## Стены
+
+Стены хранятся в каждой клетке массивом:
+
+```json
+"walls": [false, false, false, false]
+```
+
+Порядок направлений:
+
+```text
+0 = up
+1 = right
+2 = down
+3 = left
+```
+
+Если поставить стену справа у одной клетки, редактор не ставит автоматически зеркальную стену слева у соседней. Для игровой логики лучше ставить обе стороны вручную, если нужна абсолютно закрытая граница.
+
+## Порталы
+
+Редактор ищет порталы не по одиночным клеткам, а по квадратам 2x2:
+
+```text
+7 7      9 9
+7 7      9 9
+```
+
+`7` - вход, `9` - выход. После того как такие блоки нарисованы, блок `Portals` позволяет связать каждый вход с выходом. При сохранении связь попадет в поле `portals`:
+
+```json
+{
+  "entrance": [100, 101, 132, 133],
+  "exit": [300, 301, 332, 333]
+}
+```
+
+## Выходной JSON
+
+Кнопка `save` скачивает файл вида:
+
+```json
+{
+  "width": 32,
+  "height": 24,
+  "portals": [],
+  "tiles": [
+    {
+      "type": 0,
+      "walls": [false, false, false, false]
+    }
+  ]
+}
+```
+
+После сохранения этот файл обычно копируется в:
+
+- `../src/assets/map.json` - для генерации PNG.
+- `../../gnome-field/gnome-field/public/map.json` - для самой игры.
+
+Если работать через корневый `sync-map.ps1`, достаточно положить JSON в `gnome-field-generator/src/assets/map.json`, а скрипт сам обновит файлы игры.
+
+## Локальный режим и GitHub Pages
+
+Локально редактор работает от корня сайта:
+
+```text
+http://localhost:3001/
+```
+
+При деплое `deploy.sh` собирает приложение с:
+
+```bash
+VITE_BASE_PATH=/gnome-field-generator/
+```
+
+Это оставляет GitHub Pages рабочим, но не мешает нормальному локальному запуску.
+
+## Что важно помнить при доработке
+
+- Главная логика редактора лежит в `src/stores/app.js`.
+- `Cell` содержит только `type` и `walls`; игровые поля вроде `visibility` редактору не нужны.
+- `load(file)` сейчас восстанавливает размеры и клетки, но не пересобирает `portalPairs` из `data.portals`.
+- `save()` скачивает файл через временную ссылку в браузере, серверной части у редактора нет.
+- `deploy.sh` собирает `dist/` и пушит его в ветку `gh-pages` репозитория `GregoryKogan/gnome-field-generator`.
