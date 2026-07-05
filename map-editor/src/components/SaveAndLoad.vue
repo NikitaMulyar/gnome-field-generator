@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <v-row>
         <v-col cols="3" align-self="center" align="center">
             <v-btn @click="store.save()" prepend-icon="mdi-download" size="large">save</v-btn>
@@ -16,7 +16,7 @@
             >sync to game</v-btn>
         </v-col>
         <v-col cols="2" align-self="center" align="center">
-            <v-btn @click="clearAutosave" icon="mdi-delete-outline" variant="tonal"></v-btn>
+            <v-btn @click="clearField" icon="mdi-delete-outline" variant="tonal" title="clear field"></v-btn>
         </v-col>
     </v-row>
     <v-row v-if="autosaveStatus || syncStatus" dense>
@@ -41,8 +41,8 @@ const load = ($event) => {
     store.load($event);
 };
 
-const clearAutosave = () => {
-    store.clearAutosave();
+const clearField = () => {
+    store.clearField();
 };
 
 const syncToGame = () => {

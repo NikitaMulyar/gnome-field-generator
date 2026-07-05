@@ -1,36 +1,36 @@
 <template>
-    <div @click="tap" @mouseover="mouseOver" class="tile" :class="{
-        'top-wall': store.getCell(props.i, props.j).walls[0],
-        'right-wall': store.getCell(props.i, props.j).walls[1],
-        'bottom-wall': store.getCell(props.i, props.j).walls[2],
-        'left-wall': store.getCell(props.i, props.j).walls[3],
-    }" </div>
+    <div
+        class="tile"
+        :class="{
+            'top-wall': store.getCell(props.i, props.j).walls[0],
+            'right-wall': store.getCell(props.i, props.j).walls[1],
+            'bottom-wall': store.getCell(props.i, props.j).walls[2],
+            'left-wall': store.getCell(props.i, props.j).walls[3],
+        }"
+        @pointerdown.prevent="startBrush"
+        @pointerenter="continueBrush"
+        @dragstart.prevent
+    ></div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useAppStore } from '@/stores/app';
-import { ref } from 'vue';
 
 const store = useAppStore();
 const props = defineProps(['i', 'j']);
-const color = ref(store.cellTypes[store.getCell(props.i, props.j).type].color);
-const borderColor = ref(store.isHighlighted(props.i, props.j) ? "#00ff00" : "#000000");
-const borderWidth = ref(store.isHighlighted(props.i, props.j) ? "2px" : "0.5px");
 
-watch(() => store.cellTypes[store.getCell(props.i, props.j).type].color, (newValue, _) => {
-    color.value = newValue;
-});
+const color = computed(() => store.cellTypes[store.getCell(props.i, props.j).type].color);
+const borderColor = computed(() => store.isHighlighted(props.i, props.j) ? '#00ff00' : '#000000');
+const borderWidth = computed(() => store.isHighlighted(props.i, props.j) ? '2px' : '0.5px');
 
-watch(() => store.isHighlighted(props.i, props.j), (newValue, _) => {
-    borderColor.value = newValue ? "#00ff00" : "#000000";
-    borderWidth.value = newValue ? "2px" : "0.5px";
-});
+const startBrush = (event) => {
+    if (event.button !== 0) return;
+    store.startBrush(props.i, props.j);
+};
 
-const tap = () => {
-    if (store.selectedCellType != -1)
-        store.paintCell(props.i, props.j);
-    if (store.selectedWallType != -1)
-        store.addWall(props.i, props.j);
+const continueBrush = () => {
+    store.continueBrush(props.i, props.j);
 };
 
 const brighten = (color, amount) => {
@@ -54,6 +54,8 @@ const brighten = (color, amount) => {
     border: v-bind(borderWidth) solid v-bind(borderColor);
     aspect-ratio: 1;
     width: 100%;
+    user-select: none;
+    touch-action: none;
 }
 
 .tile:hover {

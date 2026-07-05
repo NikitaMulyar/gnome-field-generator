@@ -1,4 +1,4 @@
-﻿// Utilities
+// Utilities
 import { defineStore } from 'pinia';
 
 const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1';
@@ -62,6 +62,8 @@ export const useAppStore = defineStore('app', {
     syncToGameStatus: '',
     syncToGameError: '',
     syncToGameUpdatedAt: null,
+    brushActive: false,
+    lastBrushedCell: null,
   }),
   actions: {
     init() {
@@ -74,6 +76,16 @@ export const useAppStore = defineStore('app', {
       this.height = height;
       this.cells = createCells(width, height);
       this.portalPairs = [];
+      this.persistAutosave();
+    },
+    clearField() {
+      this.stopBrush();
+      this.cells = createCells(this.width, this.height);
+      this.portalPairs = [];
+      this.highlighted = [];
+      this.syncToGameStatus = '';
+      this.syncToGameError = '';
+      this.syncToGameUpdatedAt = null;
       this.persistAutosave();
     },
     getIndex(i, j) {
@@ -96,6 +108,27 @@ export const useAppStore = defineStore('app', {
       }
       this.cells[index].walls[this.selectedWallType] = true;
       this.persistAutosave();
+    },
+    applySelectedTool(i, j) {
+      const key = i + '-' + j;
+      if (this.lastBrushedCell === key) return;
+
+      this.lastBrushedCell = key;
+      if (this.selectedCellType != -1) this.paintCell(i, j);
+      if (this.selectedWallType != -1) this.addWall(i, j);
+    },
+    startBrush(i, j) {
+      this.brushActive = true;
+      this.lastBrushedCell = null;
+      this.applySelectedTool(i, j);
+    },
+    continueBrush(i, j) {
+      if (!this.brushActive) return;
+      this.applySelectedTool(i, j);
+    },
+    stopBrush() {
+      this.brushActive = false;
+      this.lastBrushedCell = null;
     },
     getPortals(exists = false) {
       const pType = exists ? 9 : 7;
@@ -262,5 +295,3 @@ export const useAppStore = defineStore('app', {
     },
   },
 });
-
-
