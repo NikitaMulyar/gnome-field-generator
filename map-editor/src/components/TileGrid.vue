@@ -1,15 +1,15 @@
 <template>
-    <div class="tile-grid">
-        <div v-for="i in store.width * store.height" :key="i">
-            <SingleTile :i="Math.floor((i - 1) / store.width)" :j="(i - 1) % store.width" />
-        </div>
+  <div class="tile-grid">
+    <div v-for="i in store.width * store.height" :key="i">
+      <SingleTile :i="Math.floor((i - 1) / store.width)" :j="(i - 1) % store.width" />
     </div>
+  </div>
 </template>
 
 <script setup>
-import { useAppStore } from '@/stores/app';
+  import { useAppStore } from '@/stores/app'
 
-const store = useAppStore();
+  const store = useAppStore()
 </script>
 
 <style scoped>

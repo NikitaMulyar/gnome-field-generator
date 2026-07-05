@@ -1,54 +1,66 @@
 <template>
-    <v-row @mouseover="highlight" @mouseleave="disableHighlight">
-        <v-col cols="6" align-self="center">
-            <v-select v-model="selectedEntrance" :items="entranceOptions" variant="underlined" hide-details
-                readonly></v-select>
-        </v-col>
-        <v-col cols="6" align-self="center">
-            <v-select @update:model-value="setExit" v-model="selectedExit" :items="exitsOptions" variant="underlined"
-                hide-details></v-select>
-        </v-col>
-    </v-row>
+  <v-row @mouseleave="disableHighlight" @mouseover="highlight">
+    <v-col align-self="center" cols="6">
+      <v-select
+        v-model="selectedEntrance"
+        hide-details
+        :items="entranceOptions"
+        readonly
+        variant="underlined"
+      />
+    </v-col>
+    <v-col align-self="center" cols="6">
+      <v-select v-model="selectedExit" hide-details :items="exitsOptions" variant="underlined" />
+    </v-col>
+  </v-row>
 </template>
 
 <script setup>
-import { useAppStore } from '@/stores/app';
-import { shallowRef } from 'vue';
-import { consoleError } from 'vuetify/lib/util/console.mjs';
+  import { useAppStore } from '@/stores/app'
 
-const store = useAppStore();
-const props = defineProps(['i']);
+  const store = useAppStore()
+  const props = defineProps(['i'])
 
-const entranceOptions = ['Entrance ' + (props.i + 1)];
-const selectedEntrance = shallowRef(entranceOptions[0]);
+  const entranceOptions = ['Entrance ' + (props.i + 1)]
+  const selectedEntrance = ref(entranceOptions[0])
 
-const exits = ref(store.getPortals(true));
-const exitsOptions = computed(() => {
-    return exits.value.map((_, index) => 'Exit ' + (index + 1));
-});
+  const exits = ref(store.getPortals(true))
+  const exitsOptions = computed(() => {
+    return exits.value.map((_, index) => 'Exit ' + (index + 1))
+  })
 
-const selectedExit = shallowRef('');
+  const selectedExit = computed({
+    get () {
+      const pair = store.portalPairs.find(pair => pair.startsWith(props.i + '-'))
+      if (!pair) return ''
+      const exitIndex = Number(pair.split('-')[1])
+      return Number.isFinite(exitIndex) ? 'Exit ' + (exitIndex + 1) : ''
+    },
+    set (value) {
+      setExit(value)
+    },
+  })
 
-watch(() => store.getPortals(true), (newValue, _) => {
-    exits.value = newValue;
-});
+  watch(() => store.getPortals(true), (newValue, _) => {
+    exits.value = newValue
+  })
 
-const setExit = ($event) => {
-    store.portalPairs = store.portalPairs.filter((pair) => !pair.startsWith(props.i));
-    store.portalPairs.push(props.i + '-' + (parseInt($event.slice(5)) - 1));
-};
+  const setExit = $event => {
+    store.portalPairs = store.portalPairs.filter(pair => !pair.startsWith(props.i + '-'))
+    store.portalPairs.push(props.i + '-' + (Number.parseInt($event.slice(5)) - 1))
+  }
 
-const highlight = () => {
-    const entrances = store.getPortals(false);
+  const highlight = () => {
+    const entrances = store.getPortals(false)
 
-    for (let [i, j] of entrances[props.i]) store.highlight(i, j);
+    for (const [i, j] of entrances[props.i]) store.highlight(i, j)
 
     if (selectedExit.value) {
-        for (let [i, j] of exits.value[parseInt(selectedExit.value.slice(5)) - 1]) store.highlight(i, j);
+      for (const [i, j] of exits.value[Number.parseInt(selectedExit.value.slice(5)) - 1]) store.highlight(i, j)
     }
-};
+  }
 
-const disableHighlight = () => {
-    store.highlighted = [];
-};
+  const disableHighlight = () => {
+    store.highlighted = []
+  }
 </script>
