@@ -1,5 +1,5 @@
 # Pages
 
-Vue components created in this folder will automatically be converted to navigatable routes.
+`index.vue` - основной экран редактора карты: размеры, типы клеток, стены, portal controls, сохранение и загрузка.
 
-Full documentation for this feature can be found in the Official [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) repository.
+Роуты создаются автоматически через `unplugin-vue-router`.

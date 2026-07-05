@@ -1,5 +1,12 @@
 # Store
 
-Pinia stores are used to store reactive state and expose actions to mutate it.
+`app.js` хранит состояние редактора карты:
 
-Full documentation for this feature can be found in the Official [Pinia](https://pinia.esm.dev/) repository.
+- размеры карты;
+- список типов клеток;
+- выбранный тип клетки или стены;
+- массив `cells`;
+- подсветку portal pairs;
+- сохранение и загрузку `map.json`.
+
+Portal pairs восстанавливаются при загрузке по 2x2 блокам входов и выходов вентиляции.

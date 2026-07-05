@@ -1,3 +1,5 @@
 # Styles
 
-This directory is for configuring the styles of the application.
+Глобальные настройки стилей Vuetify/Sass для редактора карты.
+
+Визуал отдельных контролов в основном расположен в соответствующих `.vue` компонентах.
