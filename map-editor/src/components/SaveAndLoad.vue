@@ -3,16 +3,30 @@
         <v-col cols="3" align-self="center" align="center">
             <v-btn @click="store.save()" prepend-icon="mdi-download" size="large">save</v-btn>
         </v-col>
-        <v-col cols="6">
+        <v-col cols="4">
             <v-file-input @update:model-value="load" label="Load" prepend-icon="mdi-upload" hide-details></v-file-input>
         </v-col>
         <v-col cols="3" align-self="center" align="center">
-            <v-btn @click="clearAutosave" prepend-icon="mdi-delete-outline" variant="tonal">clear draft</v-btn>
+            <v-btn
+                @click="syncToGame"
+                :loading="store.syncToGameInProgress"
+                prepend-icon="mdi-sync"
+                color="primary"
+                variant="tonal"
+            >sync to game</v-btn>
+        </v-col>
+        <v-col cols="2" align-self="center" align="center">
+            <v-btn @click="clearAutosave" icon="mdi-delete-outline" variant="tonal"></v-btn>
         </v-col>
     </v-row>
-    <v-row v-if="autosaveStatus" dense>
-        <v-col>
+    <v-row v-if="autosaveStatus || syncStatus" dense>
+        <v-col cols="12" md="6" v-if="autosaveStatus">
             <v-chip size="small" color="success" variant="tonal">{{ autosaveStatus }}</v-chip>
+        </v-col>
+        <v-col cols="12" md="6" v-if="syncStatus">
+            <v-chip size="small" :color="store.syncToGameError ? 'error' : 'primary'" variant="tonal">
+                {{ syncStatus }}
+            </v-chip>
         </v-col>
     </v-row>
 </template>
@@ -31,8 +45,18 @@ const clearAutosave = () => {
     store.clearAutosave();
 };
 
+const syncToGame = () => {
+    store.syncToGame();
+};
+
 const autosaveStatus = computed(() => {
     if (!store.autosaveUpdatedAt) return '';
     return 'draft saved ' + new Date(store.autosaveUpdatedAt).toLocaleString();
+});
+
+const syncStatus = computed(() => {
+    if (store.syncToGameError) return 'sync failed: ' + store.syncToGameError;
+    if (!store.syncToGameUpdatedAt) return '';
+    return store.syncToGameStatus + ' ' + new Date(store.syncToGameUpdatedAt).toLocaleString();
 });
 </script>

@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 
 const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1';
+const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map';
 
 export class Cell {
   constructor() {
@@ -57,6 +58,10 @@ export const useAppStore = defineStore('app', {
     portalPairs: [],
     autosaveLoaded: false,
     autosaveUpdatedAt: null,
+    syncToGameInProgress: false,
+    syncToGameStatus: '',
+    syncToGameError: '',
+    syncToGameUpdatedAt: null,
   }),
   actions: {
     init() {
@@ -151,6 +156,36 @@ export const useAppStore = defineStore('app', {
       element.click();
       document.body.removeChild(element);
     },
+    async syncToGame() {
+      this.syncToGameInProgress = true;
+      this.syncToGameStatus = '';
+      this.syncToGameError = '';
+
+      try {
+        const response = await fetch(MAP_SYNC_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.buildExportState()),
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.ok === false) {
+          throw new Error(result.error || `Sync failed with status ${response.status}`);
+        }
+
+        this.syncToGameUpdatedAt = new Date().toISOString();
+        this.syncToGameStatus = 'map synced to game';
+      } catch (error) {
+        const message = error.message || String(error);
+        this.syncToGameError = message === 'Failed to fetch'
+          ? `sync API is not reachable at ${MAP_SYNC_URL}. Start Docker Compose with map-sync-api and try again.`
+          : message;
+      } finally {
+        this.syncToGameInProgress = false;
+      }
+    },
     setPortalPair(entranceIndex, exitIndex) {
       this.portalPairs = this.portalPairs.filter((pair) => !pair.startsWith(entranceIndex + '-'));
       this.portalPairs.push(entranceIndex + '-' + exitIndex);
@@ -227,3 +262,5 @@ export const useAppStore = defineStore('app', {
     },
   },
 });
+
+
