@@ -1,55 +1,68 @@
 // Utilities
+<<<<<<< HEAD
 import { defineStore } from 'pinia';
+=======
+import { defineStore } from 'pinia'
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 
-const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1';
-const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map';
+const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1'
+const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map'
+const MIN_CELL_TYPE = 0
+const MAX_CELL_TYPE = 9
 
 export class Cell {
-  constructor() {
-    this.type = 0;
-    this.walls = [false, false, false, false];
+  constructor () {
+    this.type = 0
+    this.walls = [false, false, false, false]
   }
 }
 
 class MapState {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.portals = [];
-    this.tiles = [];
+  constructor (width, height) {
+    this.width = width
+    this.height = height
+    this.portals = []
+    this.tiles = []
   }
 }
 
 const createCells = (width, height) => {
-  const cells = [];
+  const cells = []
   for (let i = 0; i < width * height; ++i) {
-    cells.push(new Cell());
+    cells.push(new Cell())
   }
-  return cells;
-};
+  return cells
+}
 
-const normalizeCell = (cell) => ({
-  type: Number(cell?.type) || 0,
+const normalizeTileType = type => {
+  const normalized = Number(type)
+  return Number.isInteger(normalized) && normalized >= MIN_CELL_TYPE && normalized <= MAX_CELL_TYPE
+    ? normalized
+    : MIN_CELL_TYPE
+}
+
+const normalizeCell = cell => ({
+  type: normalizeTileType(cell?.type),
   walls: Array.isArray(cell?.walls)
-    ? [0, 1, 2, 3].map((index) => Boolean(cell.walls[index]))
+    ? [0, 1, 2, 3].map(index => Boolean(cell.walls[index]))
     : [false, false, false, false],
-});
+})
 
 export const useAppStore = defineStore('app', {
   state: () => ({
     width: 32,
     height: 24,
     cellTypes: [
-      { "color": "#6d9eeb", "code": 0, "description": "Water" },
-      { "color": "#9d632c", "code": 1, "description": "Stone" },
-      { "color": "#c27ba0", "code": 2, "description": "Entrance" },
-      { "color": "#b7b7b7", "code": 3, "description": "Cliff" },
-      { "color": "#ff0000", "code": 4, "description": "Bomb" },
-      { "color": "#fff2cc", "code": 5, "description": "Sand" },
-      { "color": "#8e7cc3", "code": 6, "description": "Mole" },
-      { "color": "#ff00ff", "code": 7, "description": "PortalEntrance" },
-      { "color": "#04ff00", "code": 8, "description": "Target" },
-      { "color": "#b306b7", "code": 9, "description": "PortalExit" },
+      { color: '#5db0cd', code: 0, description: 'Вода' },
+      { color: '#d8cab0', code: 1, description: 'Листочки' },
+      { color: '#4f3829', code: 2, description: 'Дверь в подвал' },
+      { color: '#d7904a', code: 3, description: 'Булочка' },
+      { color: '#d9343f', code: 4, description: 'Банка краски' },
+      { color: '#c78f4e', code: 5, description: 'Картон' },
+      { color: '#59d9e8', code: 6, description: 'Сканер' },
+      { color: '#5fd6e2', code: 7, description: 'Вход вентиляции' },
+      { color: '#7b4fd3', code: 8, description: 'Волшебная коробка' },
+      { color: '#edae4e', code: 9, description: 'Выход вентиляции' },
     ],
     selectedCellType: 0,
     selectedWallType: -1,
@@ -66,6 +79,7 @@ export const useAppStore = defineStore('app', {
     lastBrushedCell: null,
   }),
   actions: {
+<<<<<<< HEAD
     init() {
       if (this.restoreAutosave()) return;
       this.cells = createCells(this.width, this.height);
@@ -105,10 +119,16 @@ export const useAppStore = defineStore('app', {
         this.cells[index].walls = [false, false, false, false];
         this.persistAutosave();
         return;
+=======
+    init () {
+      if (this.restoreAutosave()) {
+        return
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
       }
-      this.cells[index].walls[this.selectedWallType] = true;
-      this.persistAutosave();
+      this.cells = createCells(this.width, this.height)
+      this.persistAutosave()
     },
+<<<<<<< HEAD
     applySelectedTool(i, j) {
       const key = i + '-' + j;
       if (this.lastBrushedCell === key) return;
@@ -133,66 +153,137 @@ export const useAppStore = defineStore('app', {
     getPortals(exists = false) {
       const pType = exists ? 9 : 7;
       let portals = [];
+=======
+    updateSize (width, height) {
+      const nextWidth = Number(width)
+      const nextHeight = Number(height)
+      if (
+        !Number.isInteger(nextWidth)
+        || !Number.isInteger(nextHeight)
+        || nextWidth < 1
+        || nextHeight < 1
+      ) {
+        return
+      }
+
+      this.width = nextWidth
+      this.height = nextHeight
+      this.cells = createCells(nextWidth, nextHeight)
+      this.portalPairs = []
+      this.persistAutosave()
+    },
+    getIndex (i, j) {
+      return i * this.width + j
+    },
+    getCell (i, j) {
+      return this.cells[this.getIndex(i, j)]
+    },
+    paintCell (i, j) {
+      const index = i * this.width + j
+      this.cells[index].type = this.selectedCellType
+      this.persistAutosave()
+    },
+    addWall (i, j) {
+      const index = i * this.width + j
+      if (this.selectedWallType === 4) {
+        this.cells[index].walls = [false, false, false, false]
+        this.persistAutosave()
+        return
+      }
+      this.cells[index].walls[this.selectedWallType] = true
+      this.persistAutosave()
+    },
+    getPortals (exists = false) {
+      const pType = exists ? 9 : 7
+      const portals = []
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
       for (let i = 0; i < this.height - 1; ++i) {
         for (let j = 0; j < this.width - 1; ++j) {
-          const cell1 = this.getCell(i, j);
-          const cell2 = this.getCell(i + 1, j);
-          const cell3 = this.getCell(i, j + 1);
-          const cell4 = this.getCell(i + 1, j + 1);
-          if (cell1.type == pType && cell2.type == pType && cell3.type == pType && cell4.type == pType) {
-            portals.push([[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]]);
+          const cell1 = this.getCell(i, j)
+          const cell2 = this.getCell(i + 1, j)
+          const cell3 = this.getCell(i, j + 1)
+          const cell4 = this.getCell(i + 1, j + 1)
+          if (
+            cell1.type === pType
+            && cell2.type === pType
+            && cell3.type === pType
+            && cell4.type === pType
+          ) {
+            portals.push([[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]])
           }
         }
       }
-      return portals;
+      return portals
     },
-    highlight(i, j) {
-      this.highlighted.push(i + '-' + j);
+    highlight (i, j) {
+      this.highlighted.push(i + '-' + j)
     },
-    isHighlighted(i, j) {
-      return this.highlighted.includes(i + '-' + j);
+    isHighlighted (i, j) {
+      return this.highlighted.includes(i + '-' + j)
     },
-    buildExportState() {
-      let state = new MapState(this.width, this.height);
-      state.tiles = this.cells.map(normalizeCell);
+    portalKey (indices) {
+      return [...indices].sort((a, b) => a - b).join(',')
+    },
+    restorePortalPairs (portals = []) {
+      this.portalPairs = []
+      const entrances = this
+        .getPortals(false)
+        .map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
+      const exits = this
+        .getPortals(true)
+        .map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
 
-      for (let pair of this.portalPairs) {
-        const [inI, outI] = pair.split('-').map(el => {
-          let n = Number(el);
-          return n === 0 ? n : n || el;
-        });
+      for (const portal of portals) {
+        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) {
+          continue
+        }
 
-        const entrancePortal = this.getPortals(false)[inI];
-        const exitPortal = this.getPortals(true)[outI];
-        if (!entrancePortal || !exitPortal) continue;
+        const entranceIndex = entrances.indexOf(this.portalKey(portal.entrance))
+        const exitIndex = exits.indexOf(this.portalKey(portal.exit))
+        if (entranceIndex !== -1 && exitIndex !== -1) {
+          this.portalPairs.push(entranceIndex + '-' + exitIndex)
+        }
+      }
+    },
+    buildExportState () {
+      const state = new MapState(this.width, this.height)
+      state.tiles = this.cells.map(cell => normalizeCell(cell))
+      const entrances = this.getPortals(false)
+      const exits = this.getPortals(true)
 
-        const entrance = entrancePortal.map(([i, j]) => this.getIndex(i, j));
-        const exit = exitPortal.map(([i, j]) => this.getIndex(i, j));
+      for (const pair of this.portalPairs) {
+        const [inI, outI] = pair.split('-').map(Number)
+        if (!entrances[inI] || !exits[outI]) {
+          continue
+        }
+
+        const entrance = entrances[inI].map(([i, j]) => this.getIndex(i, j))
+        const exit = exits[outI].map(([i, j]) => this.getIndex(i, j))
         state.portals.push({
-          "entrance": entrance,
-          "exit": exit,
-        });
+          entrance,
+          exit,
+        })
       }
 
-      return state;
+      return state
     },
-    save() {
-      const json = JSON.stringify(this.buildExportState());
-      let element = document.createElement("a");
+    save () {
+      const json = JSON.stringify(this.buildExportState())
+      const element = document.createElement('a')
       element.setAttribute(
-        "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(json)
-      );
-      element.setAttribute("download", "map.json");
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+        'href',
+        'data:text/plain;charset=utf-8,' + encodeURIComponent(json),
+      )
+      element.setAttribute('download', 'map.json')
+      element.style.display = 'none'
+      document.body.append(element)
+      element.click()
+      element.remove()
     },
-    async syncToGame() {
-      this.syncToGameInProgress = true;
-      this.syncToGameStatus = '';
-      this.syncToGameError = '';
+    async syncToGame () {
+      this.syncToGameInProgress = true
+      this.syncToGameStatus = ''
+      this.syncToGameError = ''
 
       try {
         const response = await fetch(MAP_SYNC_URL, {
@@ -201,97 +292,113 @@ export const useAppStore = defineStore('app', {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(this.buildExportState()),
-        });
+        })
 
-        const result = await response.json().catch(() => ({}));
+        const result = await response.json().catch(() => ({}))
         if (!response.ok || result.ok === false) {
-          throw new Error(result.error || `Sync failed with status ${response.status}`);
+          throw new Error(result.error || `Sync failed with status ${response.status}`)
         }
 
-        this.syncToGameUpdatedAt = new Date().toISOString();
-        this.syncToGameStatus = 'map synced to game';
+        this.syncToGameUpdatedAt = new Date().toISOString()
+        this.syncToGameStatus = 'map synced to game'
       } catch (error) {
-        const message = error.message || String(error);
+        const message = error.message || String(error)
         this.syncToGameError = message === 'Failed to fetch'
           ? `sync API is not reachable at ${MAP_SYNC_URL}. Start Docker Compose with map-sync-api and try again.`
-          : message;
+          : message
       } finally {
-        this.syncToGameInProgress = false;
+        this.syncToGameInProgress = false
       }
     },
-    setPortalPair(entranceIndex, exitIndex) {
-      this.portalPairs = this.portalPairs.filter((pair) => !pair.startsWith(entranceIndex + '-'));
-      this.portalPairs.push(entranceIndex + '-' + exitIndex);
-      this.persistAutosave();
+    setPortalPair (entranceIndex, exitIndex) {
+      this.portalPairs = this.portalPairs.filter(pair => !pair.startsWith(entranceIndex + '-'))
+      if (Number.isInteger(exitIndex) && exitIndex >= 0) {
+        this.portalPairs.push(entranceIndex + '-' + exitIndex)
+      }
+      this.persistAutosave()
     },
-    async load(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = JSON.parse(event.target.result);
-        this.width = data.width;
-        this.height = data.height;
-        this.cells = data.tiles.map(normalizeCell);
-        this.portalPairs = [];
-        this.persistAutosave();
-      };
-      reader.readAsText(file);
-    },
-    persistAutosave() {
-      if (typeof localStorage === 'undefined') return;
+    async load (file) {
+      const data = JSON.parse(await file.text())
+      const width = Number(data.width)
+      const height = Number(data.height)
+      if (!Number.isInteger(width) || !Number.isInteger(height)) {
+        return
+      }
 
-      const updatedAt = new Date().toISOString();
+      this.width = width
+      this.height = height
+      this.cells = Array.isArray(data.tiles) && data.tiles.length === width * height
+        ? data.tiles.map(cell => normalizeCell(cell))
+        : createCells(width, height)
+      this.restorePortalPairs(data.portals)
+      this.persistAutosave()
+    },
+    persistAutosave () {
+      if (typeof localStorage === 'undefined') {
+        return
+      }
+
+      const updatedAt = new Date().toISOString()
       const data = {
         version: 1,
         updatedAt,
         width: this.width,
         height: this.height,
-        cells: this.cells.map(normalizeCell),
+        cells: this.cells.map(cell => normalizeCell(cell)),
         portalPairs: [...this.portalPairs],
-      };
+      }
 
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
-      this.autosaveUpdatedAt = updatedAt;
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data))
+      this.autosaveUpdatedAt = updatedAt
     },
-    restoreAutosave() {
-      if (typeof localStorage === 'undefined') return false;
+    restoreAutosave () {
+      if (typeof localStorage === 'undefined') {
+        return false
+      }
 
-      const stored = localStorage.getItem(AUTOSAVE_KEY);
-      if (!stored) return false;
+      const stored = localStorage.getItem(AUTOSAVE_KEY)
+      if (!stored) {
+        return false
+      }
 
       try {
-        const data = JSON.parse(stored);
-        const width = Number(data.width);
-        const height = Number(data.height);
+        const data = JSON.parse(stored)
+        const width = Number(data.width)
+        const height = Number(data.height)
 
         if (
-          !Number.isInteger(width) ||
-          !Number.isInteger(height) ||
-          width < 1 ||
-          height < 1 ||
-          !Array.isArray(data.cells) ||
-          data.cells.length !== width * height
+          !Number.isInteger(width)
+          || !Number.isInteger(height)
+          || width < 1
+          || height < 1
+          || !Array.isArray(data.cells)
+          || data.cells.length !== width * height
         ) {
-          return false;
+          return false
         }
 
-        this.width = width;
-        this.height = height;
-        this.cells = data.cells.map(normalizeCell);
-        this.portalPairs = Array.isArray(data.portalPairs) ? data.portalPairs : [];
-        this.autosaveLoaded = true;
-        this.autosaveUpdatedAt = data.updatedAt || null;
-        return true;
+        this.width = width
+        this.height = height
+        this.cells = data.cells.map(cell => normalizeCell(cell))
+        this.portalPairs = Array.isArray(data.portalPairs) ? data.portalPairs : []
+        this.autosaveLoaded = true
+        this.autosaveUpdatedAt = data.updatedAt || null
+        return true
       } catch (error) {
-        console.error('Failed to restore map autosave:', error);
-        return false;
+        console.error('Failed to restore map autosave:', error)
+        return false
       }
     },
-    clearAutosave() {
+    clearAutosave () {
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(AUTOSAVE_KEY);
+        localStorage.removeItem(AUTOSAVE_KEY)
       }
-      this.autosaveLoaded = false;
-      this.autosaveUpdatedAt = null;
+      this.autosaveLoaded = false
+      this.autosaveUpdatedAt = null
     },
   },
+<<<<<<< HEAD
 });
+=======
+})
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897

@@ -4,17 +4,19 @@ import json
 
 TILE_SIZE = 64
 
+TEXTURE_DIR = "art-camp"
+
 TEXTURES = {
-    0: "milk.png",
-    1: "cheese.png",
-    2: "entrance.png",
-    3: "lolipop.png",
-    4: "agusha.png",
-    5: "chocolate.png",
-    6: "mouse.png",
-    7: "portal-in.png",
-    8: "machine.png",
-    9: "portal-out.png",
+    0: "water.png",
+    1: "papers.png",
+    2: "basement-door.png",
+    3: "bun.png",
+    4: "paint-can.png",
+    5: "cardboard.png",
+    6: "scanner.png",
+    7: "vent-in.png",
+    8: "magic-box.png",
+    9: "vent-out.png",
 }
 
 
@@ -42,7 +44,7 @@ def main():
     map2d = Map("src/assets/map.json")
 
     img = Image.new(
-        "RGBA", (map2d.width * TILE_SIZE, map2d.height * TILE_SIZE), (0, 0, 0, 0)
+        "RGBA", (map2d.width * TILE_SIZE, map2d.height * TILE_SIZE), (21, 25, 35, 255)
     )
 
     for i in range(map2d.height):
@@ -50,7 +52,9 @@ def main():
             tile = map2d.tiles[i * map2d.width + j]
             if tile in [7, 9]:
                 continue
-            texture = Image.open(f"src/assets/textures/{TEXTURES[tile]}")
+            texture = Image.open(
+                f"src/assets/textures/{TEXTURE_DIR}/{TEXTURES[tile]}"
+            ).convert("RGBA")
             texture = texture.resize((TILE_SIZE, TILE_SIZE))
             img.paste(texture, (j * TILE_SIZE, i * TILE_SIZE))
 
@@ -60,8 +64,12 @@ def main():
             tile2 = map2d.tiles[(i + 1) * map2d.width + (j + 0)]
             tile3 = map2d.tiles[(i + 0) * map2d.width + (j + 1)]
             tile4 = map2d.tiles[(i + 1) * map2d.width + (j + 1)]
-            if all(t in [7, 9] for t in [tile1, tile2, tile3, tile4]):
-                texture = Image.open(f"src/assets/textures/{TEXTURES[tile1]}")
+            if tile1 in [7, 9] and all(
+                t == tile1 for t in [tile1, tile2, tile3, tile4]
+            ):
+                texture = Image.open(
+                    f"src/assets/textures/{TEXTURE_DIR}/{TEXTURES[tile1]}"
+                ).convert("RGBA")
                 texture = texture.resize((TILE_SIZE * 2, TILE_SIZE * 2))
                 img.paste(texture, (j * TILE_SIZE, i * TILE_SIZE))
 
@@ -71,7 +79,7 @@ def main():
         j = tile_i % map2d.width
         WALL_TEXTURE_LOOKUP = {0: "up", 1: "right", 2: "down", 3: "left"}
         texture = Image.open(
-            f"src/assets/textures/wall-{WALL_TEXTURE_LOOKUP[wall_i]}.png"
+            f"src/assets/textures/{TEXTURE_DIR}/wall-{WALL_TEXTURE_LOOKUP[wall_i]}.png"
         ).convert("RGBA")
         texture = texture.resize((TILE_SIZE, TILE_SIZE))
         img.paste(texture, (j * TILE_SIZE, i * TILE_SIZE), texture)

@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
     <div
         class="tile"
         :class="{
@@ -32,20 +33,57 @@ const startBrush = (event) => {
 const continueBrush = () => {
     store.continueBrush(props.i, props.j);
 };
+=======
+  <div
+    class="tile"
+    :class="tileClasses"
+    @click="tap"
+  />
+</template>
 
-const brighten = (color, amount) => {
-    const c = color.substring(1);
-    const rgb = parseInt(c, 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = (rgb >> 0) & 0xff;
+<script setup>
+  import { computed } from 'vue'
+  import { useAppStore } from '@/stores/app'
 
-    const newR = Math.min(255, r + 255 * amount);
-    const newG = Math.min(255, g + 255 * amount);
-    const newB = Math.min(255, b + 255 * amount);
+  const store = useAppStore()
+  const props = defineProps(['i', 'j'])
 
-    return `#${((newR << 16) | (newG << 8) | newB).toString(16)}`;
-};
+  const cell = computed(() => store.getCell(props.i, props.j))
+  const color = computed(() => store.cellTypes[cell.value.type].color)
+  const isHighlighted = computed(() => store.isHighlighted(props.i, props.j))
+  const borderColor = computed(() => isHighlighted.value ? '#00ff00' : '#000000')
+  const borderWidth = computed(() => isHighlighted.value ? '2px' : '0.5px')
+  const tileClasses = computed(() => {
+    const walls = cell.value.walls
+    return {
+      'top-wall': walls[0],
+      'right-wall': walls[1],
+      'bottom-wall': walls[2],
+      'left-wall': walls[3],
+    }
+  })
+
+  const tap = () => {
+    if (store.selectedCellType !== -1)
+      store.paintCell(props.i, props.j)
+    if (store.selectedWallType !== -1)
+      store.addWall(props.i, props.j)
+  }
+
+  const brighten = (color, amount) => {
+    const c = color.slice(1)
+    const rgb = Number.parseInt(c, 16)
+    const r = (rgb >> 16) & 0xff
+    const g = (rgb >> 8) & 0xff
+    const b = (Math.trunc(rgb)) & 0xff
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
+
+    const newR = Math.min(255, r + 255 * amount)
+    const newG = Math.min(255, g + 255 * amount)
+    const newB = Math.min(255, b + 255 * amount)
+
+    return `#${((newR << 16) | (newG << 8) | newB).toString(16)}`
+  }
 </script>
 
 <style scoped>

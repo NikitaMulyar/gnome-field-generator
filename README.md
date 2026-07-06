@@ -1,132 +1,141 @@
-﻿# gnome-field-generator
+# gnome-field-generator
 
-Инструменты для подготовки поля игры: визуальный редактор карты, JSON с описанием клеток и Python-скрипт, который собирает большую PNG-карту из тайлов.
-
-Эта папка производит два главных артефакта для игры:
-
-- `map.json` - логическая карта: размеры, типы клеток, стены и порталы.
-- `map.png` - фоновая картинка поля, поверх которой игра рисует интерактивную сетку.
+Инструменты для карты `gnome-field`: Vue/Vuetify-редактор, autosave, sync-to-game API, генератор preview-картинки и генератор текстур темы `art-camp`.
 
 ## Структура
 
-```text
-gnome-field-generator/
-  docker-compose.yml        # запуск редактора и Python-генератора
-  Dockerfile                # Python-образ для generate.py
-  src/
-    generate.py             # рендерит PNG-карту из JSON и текстур
-    assets/
-      map.json              # входная карта для generate.py
-      textures/             # картинки клеток и стен
-  out/
-    map-2024.png            # сохраненные примеры/версии карт
-    map-2025.png
-  map-editor/               # Vue/Vuetify-редактор map.json
-  requirements.txt          # Python-зависимости для generate.py
-```
+- `map-editor/` - Vue/Vuetify-редактор карты.
+- `src/assets/map.json` - исходная карта редактора/генератора.
+- `src/generate.py` - собирает PNG preview карты в `out/map.png`.
+- `src/sync_server.py` - локальный API, который принимает карту из editor, генерирует preview и копирует JSON/PNG в game.
+- `src/assets/textures/art-camp/` - текущие текстуры для preview.
+- `scripts/generate_art_theme_assets.py` - генерирует текстуры и копирует их также в игровой проект.
+- `out/map-2024.png`, `out/map-2025.png` - сохраненные preview старых карт.
+- `out/map.png` - generated preview текущей карты.
 
-## Запуск через Docker
+Старые текстуры в `src/assets/textures/*.png` оставлены как legacy-набор. Для текущей игры используется `src/assets/textures/art-camp/`.
 
-Из этой папки можно поднять редактор карты отдельно:
+## Docker
 
-```bash
-docker compose up --build map-editor
-```
-
-Редактор будет доступен здесь:
-
-```text
-http://localhost:3001/
-```
-
-Из корня `C:\NotGnomes` можно поднять сразу игру и редактор:
+Из корня этого репозитория можно поднять editor и sync API:
 
 ```bash
 docker compose up --build
 ```
 
-## Сгенерировать PNG-карту через Docker
+Обычно удобнее запускать общий compose из родительской рабочей папки, где рядом лежат оба проекта:
 
-Только генерация `out/map.png`:
+```text
+gnome-field/
+gnome-field-generator/
+```
+
+Sync API ожидает доступ к game-проекту, чтобы обновлять:
+
+- `../gnome-field/gnome-field/public/map.json`;
+- `../gnome-field/gnome-field/src/assets/map.png`.
+
+## Python-Зависимости
 
 ```bash
-docker compose --profile tools run --rm map-generator
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
 ```
 
-Из корня `C:\NotGnomes` можно сразу сгенерировать PNG и скопировать карту в игру:
+## Генерация Preview Карты
 
 ```bash
-docker compose --profile tools run --rm map-sync
+./.venv/bin/python src/generate.py
 ```
 
-## Формат `map.json`
+Результат:
 
-Минимальная структура:
-
-```json
-{
-  "width": 32,
-  "height": 24,
-  "portals": [],
-  "tiles": [
-    {
-      "type": 0,
-      "walls": [false, false, false, false]
-    }
-  ]
-}
+```text
+out/map.png
 ```
 
-Правила:
+## Генерация Текстур Темы
 
-- `width` и `height` задают размер поля.
-- `tiles` - плоский массив длиной `width * height`.
-- Индекс клетки считается так: `index = row * width + column`.
-- `walls` всегда хранит 4 значения в порядке `[up, right, down, left]`.
-- `portals` связывает 2x2-блок входа с 2x2-блоком выхода.
-
-Пример портала:
-
-```json
-{
-  "entrance": [100, 101, 132, 133],
-  "exit": [300, 301, 332, 333]
-}
+```bash
+./.venv/bin/python scripts/generate_art_theme_assets.py
 ```
 
-## Типы клеток
+Скрипт обновляет два набора файлов:
 
-| Код | Тип в игре | Текущая текстура генератора |
-| --- | --- | --- |
-| `0` | `Water` | `milk.png` |
-| `1` | `Stone` | `cheese.png` |
-| `2` | `Entrance` | `entrance.png` |
-| `3` | `Cliff` | `lolipop.png` |
-| `4` | `Bomb` | `agusha.png` |
-| `5` | `Sand` | `chocolate.png` |
-| `6` | `Mole` | `mouse.png` |
-| `7` | `PortalEntrance` | `portal-in.png` |
-| `8` | `Target` | `machine.png` |
-| `9` | `PortalExit` | `portal-out.png` |
+- `src/assets/textures/art-camp/` в этом репозитории;
+- `../gnome-field/gnome-field/src/assets/map-tiles/art-camp/` в игровом репозитории.
 
-## Как работает `src/generate.py`
+Он также обновляет игровые эффекты:
 
-1. Читает `src/assets/map.json`.
-2. Создает прозрачное изображение размером `width * 64` на `height * 64`.
-3. Рисует обычные клетки по их типам.
-4. Отдельно ищет 2x2-блоки порталов (`7` или `9`) и рисует для них одну большую текстуру.
-5. Поверх клеток рисует стены из `wall-up.png`, `wall-right.png`, `wall-down.png`, `wall-left.png`.
-6. Сохраняет результат в `out/map.png`.
+- `paint-explosion.gif`;
+- `paint-explosion.png`;
+- `paint-stain.png`.
 
-Размер одного тайла сейчас захардкожен:
+## Редактор Карты
 
-```python
-TILE_SIZE = 64
+```bash
+cd map-editor
+yarn install
+yarn dev
 ```
 
-## Важные ограничения
+Адрес по умолчанию:
 
-- `generate.py` не валидирует карту: если в JSON неправильный код клетки, неправильная длина `tiles` или нет нужной текстуры, ошибка появится только во время запуска.
-- В редакторе порталы определяются как 2x2-блоки. Одинокая клетка типа `PortalEntrance` или `PortalExit` не считается полноценным порталом.
-- В текущем редакторе загрузка файла восстанавливает размеры и клетки, но пары порталов в UI могут потребовать повторного выбора перед сохранением.
-- В проекте есть несколько наборов текстур (`2024`, `minecraft`), но `generate.py` сейчас использует только файлы напрямую из `src/assets/textures/`.
+```text
+http://127.0.0.1:3001/
+```
+
+Для GitHub Pages/base-path проверки:
+
+```bash
+VITE_BASE_PATH=/gnome-field-generator/ yarn dev
+```
+
+## Autosave И Sync To Game
+
+Редактор сохраняет черновик в `localStorage` после изменения карты.
+
+Кнопка `sync to game` отправляет текущую карту в sync API:
+
+```text
+http://localhost:3002/sync-map
+```
+
+API:
+
+1. валидирует карту;
+2. записывает ее в `src/assets/map.json`;
+3. запускает `src/generate.py`;
+4. копирует JSON в game `public/map.json`;
+5. копирует preview PNG в game `src/assets/map.png`.
+
+## Проверки
+
+```bash
+cd map-editor
+yarn lint
+yarn build
+```
+
+Из корня generator-проекта:
+
+```bash
+./.venv/bin/python src/generate.py
+```
+
+## Типы Клеток
+
+| Код | Значение |
+| --- | --- |
+| `0` | вода |
+| `1` | листочки |
+| `2` | дверь в подвал |
+| `3` | булочка |
+| `4` | банка краски |
+| `5` | картон |
+| `6` | сканер |
+| `7` | вход в вентиляцию |
+| `8` | волшебная коробка |
+| `9` | выход из вентиляции |
+
+Фанерные стены сохраняются в `walls` каждой клетки в порядке `up`, `right`, `down`, `left`.

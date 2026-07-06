@@ -1,12 +1,20 @@
 <template>
+<<<<<<< HEAD
     <div class="tile-grid" @pointerleave="store.stopBrush()">
         <div v-for="i in store.width * store.height" :key="i">
             <SingleTile :i="Math.floor((i - 1) / store.width)" :j="(i - 1) % store.width" />
         </div>
+=======
+  <div class="tile-grid">
+    <div v-for="i in store.width * store.height" :key="i">
+      <SingleTile :i="Math.floor((i - 1) / store.width)" :j="(i - 1) % store.width" />
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
     </div>
+  </div>
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { onBeforeUnmount, onMounted } from 'vue';
 import { useAppStore } from '@/stores/app';
 
@@ -25,6 +33,11 @@ onBeforeUnmount(() => {
     window.removeEventListener('pointerup', stopBrush);
     window.removeEventListener('blur', stopBrush);
 });
+=======
+  import { useAppStore } from '@/stores/app'
+
+  const store = useAppStore()
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 </script>
 
 <style scoped>

@@ -1,14 +1,18 @@
-﻿import json
+import json
 import os
 import shutil
 import subprocess
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-WORK_DIR = Path(os.environ.get("WORK_DIR", "/work"))
-GAME_DIR = Path(os.environ.get("GAME_DIR", "/game"))
+ROOT = Path(__file__).resolve().parents[1]
+WORK_DIR = Path(os.environ.get("WORK_DIR", ROOT))
+GAME_DIR = Path(os.environ.get("GAME_DIR", ROOT.parent / "gnome-field" / "gnome-field"))
 HOST = os.environ.get("SYNC_API_HOST", "0.0.0.0")
 PORT = int(os.environ.get("SYNC_API_PORT", "3002"))
+MIN_TILE_TYPE = 0
+MAX_TILE_TYPE = 9
 
 SOURCE_MAP = WORK_DIR / "src" / "assets" / "map.json"
 GENERATED_MAP = WORK_DIR / "out" / "map.png"
@@ -34,13 +38,32 @@ def validate_map(data):
     for index, tile in enumerate(tiles):
         if not isinstance(tile, dict):
             raise ValueError(f"tile {index} must be an object")
-        if not isinstance(tile.get("type"), int):
+        tile_type = tile.get("type")
+        if not isinstance(tile_type, int):
             raise ValueError(f"tile {index}.type must be an integer")
+        if tile_type < MIN_TILE_TYPE or tile_type > MAX_TILE_TYPE:
+            raise ValueError(
+                f"tile {index}.type must be between {MIN_TILE_TYPE} and {MAX_TILE_TYPE}"
+            )
         walls = tile.get("walls")
         if not isinstance(walls, list) or len(walls) != 4:
             raise ValueError(f"tile {index}.walls must be an array of 4 booleans")
         if not all(isinstance(wall, bool) for wall in walls):
             raise ValueError(f"tile {index}.walls must contain only booleans")
+
+    max_index = width * height - 1
+    for index, portal in enumerate(portals):
+        if not isinstance(portal, dict):
+            raise ValueError(f"portal {index} must be an object")
+        for key in ("entrance", "exit"):
+            indices = portal.get(key)
+            if not isinstance(indices, list) or len(indices) != 4:
+                raise ValueError(f"portal {index}.{key} must be an array of 4 tile indices")
+            if not all(
+                isinstance(tile_index, int) and 0 <= tile_index <= max_index
+                for tile_index in indices
+            ):
+                raise ValueError(f"portal {index}.{key} must contain valid tile indices")
 
     return {
         "width": width,
@@ -83,7 +106,7 @@ class SyncHandler(BaseHTTPRequestHandler):
                 encoding="utf-8",
             )
 
-            subprocess.run(["python", "src/generate.py"], cwd=WORK_DIR, check=True)
+            subprocess.run([sys.executable, "src/generate.py"], cwd=WORK_DIR, check=True)
 
             if not GENERATED_MAP.exists():
                 raise RuntimeError(f"Generated map not found: {GENERATED_MAP}")

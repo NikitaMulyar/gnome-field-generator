@@ -1,70 +1,73 @@
+<<<<<<< HEAD
 # map-editor
+=======
+# gnome-field map-editor
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 
-Визуальный редактор `map.json` для `gnome-field`. Это отдельное Vue/Vuetify-приложение внутри репозитория `gnome-field-generator`.
+Vue/Vuetify-редактор карты для `gnome-field`.
 
-Редактор нужен, чтобы не писать карту руками: можно задавать размер поля, раскрашивать клетки, ставить стены, находить 2x2-порталы, связывать входы с выходами и скачивать готовый JSON.
+## Запуск Через Docker
 
-## Запуск через Docker
-
-Из папки `gnome-field-generator`:
-
-```bash
-docker compose up --build map-editor
-```
-
-Локальный адрес:
-
-```text
-http://localhost:3001/
-```
-
-Из корня `C:\NotGnomes` можно поднять сразу игру и редактор:
+Из корня `gnome-field-generator`:
 
 ```bash
 docker compose up --build
 ```
 
-## Запуск без Docker
+Editor открывается на:
+
+```text
+http://127.0.0.1:3001/
+```
+
+Sync API открывается на:
+
+```text
+http://127.0.0.1:3002/
+```
+
+## Запуск Без Docker
 
 ```bash
 yarn install
 yarn dev
 ```
 
-В `vite.config.mjs` локально указан отдельный порт:
+Адрес:
 
-```js
-server: {
-  port: 3001
-}
+```text
+http://127.0.0.1:3001/
+```
+
+Если нужен base path для Pages:
+
+```bash
+VITE_BASE_PATH=/gnome-field-generator/ yarn dev
 ```
 
 ## Команды
 
 ```bash
-yarn dev      # dev-сервер Vite
-yarn build    # production-сборка в dist/
-yarn preview  # просмотр production-сборки
-yarn lint     # ESLint с автоисправлениями
+yarn lint
+yarn build
+yarn preview
 ```
 
-## Основные файлы
+`yarn lint` может автоформатировать файлы. После запуска проверяй `git diff`.
 
-```text
-Dockerfile                       # Node/Yarn-образ редактора
-src/pages/index.vue              # собирает экран редактора из компонентов
-src/stores/app.js                # состояние карты и логика сохранения/загрузки
-src/components/DimensionControls.vue
-src/components/CellTypesControls.vue
-src/components/WallTypeControls.vue
-src/components/TileGrid.vue
-src/components/SingleTile.vue
-src/components/PortalsControls.vue
-src/components/SaveAndLoad.vue
-```
+## Как Пользоваться
 
-## Как пользоваться
+- Размер карты задается в блоке размеров.
+- Тип клетки выбирается в панели типов.
+- Стены задаются отдельными кнопками направлений; в игре они выглядят как фанера.
+- Входы и выходы вентиляции создаются 2x2 блоками из клеток `7` и `9`.
+- Пары вентиляции настраиваются в portal controls.
+- `Save` скачивает `map.json`.
+- `Load` загружает существующий `map.json` и восстанавливает portal pairs.
+- Черновик автоматически сохраняется в `localStorage`.
+- `sync to game` отправляет текущую карту в sync API и обновляет game-проект.
 
+<<<<<<< HEAD
 1. `DimensionControls` задает ширину и высоту поля. По умолчанию поле заблокировано от случайного изменения, кнопку с замком нужно открыть вручную.
 2. `CellTypesControls` выбирает тип клетки.
 3. Клик по клетке в `TileGrid` ставит выбранный тип.
@@ -158,12 +161,20 @@ docker compose up --build
 ## Выходной JSON
 
 Кнопка `save` скачивает файл вида:
+=======
+## Формат Карты
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 
 ```json
 {
   "width": 32,
   "height": 24,
-  "portals": [],
+  "portals": [
+    {
+      "entrance": [1, 2, 33, 34],
+      "exit": [100, 101, 132, 133]
+    }
+  ],
   "tiles": [
     {
       "type": 0,
@@ -173,23 +184,42 @@ docker compose up --build
 }
 ```
 
-После сохранения этот файл обычно копируется в:
+Порядок стен: `up`, `right`, `down`, `left`.
 
-- `../src/assets/map.json` - для генерации PNG.
-- `../../gnome-field/gnome-field/public/map.json` - для самой игры.
+## Sync To Game
 
-Если работать через корневой Docker Compose, достаточно положить JSON в `gnome-field-generator/src/assets/map.json`, а затем выполнить:
+Кнопка `sync to game` вызывает:
 
-```bash
-docker compose --profile tools run --rm map-sync
+```text
+http://localhost:3002/sync-map
 ```
 
-## Локальный режим и GitHub Pages
-
-Локально редактор работает от корня сайта. При деплое `deploy.sh` собирает приложение с:
+По умолчанию URL можно переопределить через:
 
 ```bash
-VITE_BASE_PATH=/gnome-field-generator/
+VITE_MAP_SYNC_URL=http://localhost:3002/sync-map yarn dev
 ```
 
+<<<<<<< HEAD
 Это оставляет GitHub Pages рабочим, но не мешает нормальному локальному запуску.
+=======
+Sync API сохраняет карту в generator, запускает `src/generate.py`, а потом копирует:
+
+- `src/assets/map.json` -> `../gnome-field/gnome-field/public/map.json`;
+- `out/map.png` -> `../gnome-field/gnome-field/src/assets/map.png`.
+
+## Типы Клеток
+
+| Код | Значение |
+| --- | --- |
+| `0` | вода |
+| `1` | листочки |
+| `2` | дверь в подвал |
+| `3` | булочка |
+| `4` | банка краски |
+| `5` | картон |
+| `6` | сканер |
+| `7` | вход в вентиляцию |
+| `8` | волшебная коробка |
+| `9` | выход из вентиляции |
+>>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897

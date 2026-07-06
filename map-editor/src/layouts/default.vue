@@ -7,8 +7,8 @@
 </template>
 
 <script setup>
-import { useAppStore } from '@/stores/app';
+  import { useAppStore } from '@/stores/app'
 
-const store = useAppStore();
-store.init();
+  const store = useAppStore()
+  store.init()
 </script>

@@ -1,4 +1,4 @@
-﻿services:
+services:
   map-editor:
     build:
       context: ./map-editor

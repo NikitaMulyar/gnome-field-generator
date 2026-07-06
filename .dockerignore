@@ -1,4 +1,4 @@
-﻿.venv
+.venv
 .git
 .gitignore
 map-editor/node_modules
