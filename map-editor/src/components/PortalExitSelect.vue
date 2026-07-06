@@ -52,9 +52,6 @@
     if (!entrances[props.i]) return
 
     for (const [i, j] of entrances[props.i]) store.highlight(i, j)
-
-    const exit = exits.value[Number.parseInt(selectedExit.value.slice(5)) - 1]
-    if (exit) for (const [i, j] of exit) store.highlight(i, j)
   }
 
   const disableHighlight = () => {

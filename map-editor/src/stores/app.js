@@ -24,7 +24,9 @@ class MapState {
 
 const createCells = (width, height) => {
   const cells = []
-  for (let i = 0; i < width * height; ++i) cells.push(new Cell())
+  for (let i = 0; i < width * height; ++i) {
+    cells.push(new Cell())
+  }
   return cells
 }
 
@@ -46,15 +48,21 @@ const normalizeDimensions = data => {
   const width = Number(data?.width)
   const height = Number(data?.height)
 
-  if (!Number.isInteger(width) || width < 1) throw new Error('map width must be a positive integer')
-  if (!Number.isInteger(height) || height < 1) throw new Error('map height must be a positive integer')
+  if (!Number.isInteger(width) || width < 1) {
+    throw new Error('map width must be a positive integer')
+  }
+  if (!Number.isInteger(height) || height < 1) {
+    throw new Error('map height must be a positive integer')
+  }
 
   return { width, height }
 }
 
 const normalizeMapData = data => {
   const { width, height } = normalizeDimensions(data)
-  if (!Array.isArray(data?.tiles)) throw new Error('map tiles must be an array')
+  if (!Array.isArray(data?.tiles)) {
+    throw new TypeError('map tiles must be an array')
+  }
   if (data.tiles.length !== width * height) {
     throw new Error(`map must contain ${width * height} tiles, got ${data.tiles.length}`)
   }
@@ -116,14 +124,18 @@ export const useAppStore = defineStore('app', {
   }),
   actions: {
     init () {
-      if (this.restoreAutosave()) return
+      if (this.restoreAutosave()) {
+        return
+      }
       this.cells = createCells(this.width, this.height)
       this.persistAutosave()
     },
     updateSize (width, height) {
       const nextWidth = Number(width)
       const nextHeight = Number(height)
-      if (!Number.isInteger(nextWidth) || !Number.isInteger(nextHeight) || nextWidth < 1 || nextHeight < 1) return
+      if (!Number.isInteger(nextWidth) || !Number.isInteger(nextHeight) || nextWidth < 1 || nextHeight < 1) {
+        return
+      }
 
       this.width = nextWidth
       this.height = nextHeight
@@ -151,29 +163,41 @@ export const useAppStore = defineStore('app', {
     },
     paintCell (i, j) {
       const index = this.getIndex(i, j)
-      if (!this.cells[index]) return
+      if (!this.cells[index]) {
+        return
+      }
       this.cells[index].type = this.selectedCellType
       this.persistAutosave()
     },
     addWall (i, j) {
       const index = this.getIndex(i, j)
-      if (!this.cells[index]) return
+      if (!this.cells[index]) {
+        return
+      }
       if (this.selectedWallType === 4) {
         this.cells[index].walls = [false, false, false, false]
         this.persistAutosave()
         return
       }
-      if (this.selectedWallType < 0 || this.selectedWallType > 3) return
+      if (this.selectedWallType < 0 || this.selectedWallType > 3) {
+        return
+      }
       this.cells[index].walls[this.selectedWallType] = true
       this.persistAutosave()
     },
     applySelectedTool (i, j) {
       const key = i + '-' + j
-      if (this.lastBrushedCell === key) return
+      if (this.lastBrushedCell === key) {
+        return
+      }
 
       this.lastBrushedCell = key
-      if (this.selectedCellType !== -1) this.paintCell(i, j)
-      if (this.selectedWallType !== -1) this.addWall(i, j)
+      if (this.selectedCellType !== -1) {
+        this.paintCell(i, j)
+      }
+      if (this.selectedWallType !== -1) {
+        this.addWall(i, j)
+      }
     },
     startBrush (i, j) {
       this.brushActive = true
@@ -181,7 +205,9 @@ export const useAppStore = defineStore('app', {
       this.applySelectedTool(i, j)
     },
     continueBrush (i, j) {
-      if (!this.brushActive) return
+      if (!this.brushActive) {
+        return
+      }
       this.applySelectedTool(i, j)
     },
     stopBrush () {
@@ -219,10 +245,14 @@ export const useAppStore = defineStore('app', {
       const exits = this.getPortals(true).map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
 
       for (const portal of portals) {
-        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) continue
+        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) {
+          continue
+        }
         const entranceIndex = entrances.indexOf(this.portalKey(portal.entrance))
         const exitIndex = exits.indexOf(this.portalKey(portal.exit))
-        if (entranceIndex !== -1 && exitIndex !== -1) this.portalPairs.push(entranceIndex + '-' + exitIndex)
+        if (entranceIndex !== -1 && exitIndex !== -1) {
+          this.portalPairs.push(entranceIndex + '-' + exitIndex)
+        }
       }
     },
     buildExportState () {
@@ -233,7 +263,9 @@ export const useAppStore = defineStore('app', {
 
       for (const pair of this.portalPairs) {
         const [inI, outI] = pair.split('-').map(Number)
-        if (!entrances[inI] || !exits[outI]) continue
+        if (!entrances[inI] || !exits[outI]) {
+          continue
+        }
         state.portals.push({
           entrance: entrances[inI].map(([i, j]) => this.getIndex(i, j)),
           exit: exits[outI].map(([i, j]) => this.getIndex(i, j)),
@@ -265,7 +297,9 @@ export const useAppStore = defineStore('app', {
         })
 
         const result = await response.json().catch(() => ({}))
-        if (!response.ok || result.ok === false) throw new Error(result.error || `Sync failed with status ${response.status}`)
+        if (!response.ok || result.ok === false) {
+          throw new Error(result.error || `Sync failed with status ${response.status}`)
+        }
 
         this.syncToGameUpdatedAt = new Date().toISOString()
         this.syncToGameStatus = 'map synced to game'
@@ -280,7 +314,9 @@ export const useAppStore = defineStore('app', {
     },
     setPortalPair (entranceIndex, exitIndex) {
       this.portalPairs = this.portalPairs.filter(pair => !pair.startsWith(entranceIndex + '-'))
-      if (Number.isInteger(exitIndex) && exitIndex >= 0) this.portalPairs.push(entranceIndex + '-' + exitIndex)
+      if (Number.isInteger(exitIndex) && exitIndex >= 0) {
+        this.portalPairs.push(entranceIndex + '-' + exitIndex)
+      }
       this.persistAutosave()
     },
     async load (file) {
@@ -288,7 +324,9 @@ export const useAppStore = defineStore('app', {
       this.loadError = ''
       try {
         const selectedFile = Array.isArray(file) ? file[0] : file
-        if (!selectedFile) return
+        if (!selectedFile) {
+          return
+        }
 
         const data = normalizeMapData(JSON.parse(await selectedFile.text()))
         this.stopBrush()
@@ -304,7 +342,9 @@ export const useAppStore = defineStore('app', {
       }
     },
     persistAutosave () {
-      if (typeof localStorage === 'undefined') return
+      if (typeof localStorage === 'undefined') {
+        return
+      }
 
       const updatedAt = new Date().toISOString()
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
@@ -318,10 +358,14 @@ export const useAppStore = defineStore('app', {
       this.autosaveUpdatedAt = updatedAt
     },
     restoreAutosave () {
-      if (typeof localStorage === 'undefined') return false
+      if (typeof localStorage === 'undefined') {
+        return false
+      }
 
       const stored = localStorage.getItem(AUTOSAVE_KEY)
-      if (!stored) return false
+      if (!stored) {
+        return false
+      }
 
       try {
         const data = normalizeAutosaveData(JSON.parse(stored))
@@ -338,7 +382,9 @@ export const useAppStore = defineStore('app', {
       }
     },
     clearAutosave () {
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(AUTOSAVE_KEY)
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(AUTOSAVE_KEY)
+      }
       this.autosaveLoaded = false
       this.autosaveUpdatedAt = null
     },

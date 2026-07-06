@@ -3,8 +3,6 @@
     class="tile"
     :class="tileClasses"
     @dragstart.prevent
-    @pointerdown.prevent="startBrush"
-    @pointerenter="continueBrush"
   />
 </template>
 
@@ -29,15 +27,6 @@
       'left-wall': walls[3],
     }
   })
-
-  const startBrush = event => {
-    if (event.button !== 0) return
-    store.startBrush(props.i, props.j)
-  }
-
-  const continueBrush = () => {
-    store.continueBrush(props.i, props.j)
-  }
 
   const brighten = (color, amount) => {
     const c = color.slice(1)
