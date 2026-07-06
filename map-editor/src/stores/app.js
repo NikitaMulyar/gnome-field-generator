@@ -24,9 +24,7 @@ class MapState {
 
 const createCells = (width, height) => {
   const cells = []
-  for (let i = 0; i < width * height; ++i) {
-    cells.push(new Cell())
-  }
+  for (let i = 0; i < width * height; ++i) cells.push(new Cell())
   return cells
 }
 
@@ -43,6 +41,46 @@ const normalizeCell = cell => ({
     ? [0, 1, 2, 3].map(index => Boolean(cell.walls[index]))
     : [false, false, false, false],
 })
+
+const normalizeDimensions = data => {
+  const width = Number(data?.width)
+  const height = Number(data?.height)
+
+  if (!Number.isInteger(width) || width < 1) throw new Error('map width must be a positive integer')
+  if (!Number.isInteger(height) || height < 1) throw new Error('map height must be a positive integer')
+
+  return { width, height }
+}
+
+const normalizeMapData = data => {
+  const { width, height } = normalizeDimensions(data)
+  if (!Array.isArray(data?.tiles)) throw new Error('map tiles must be an array')
+  if (data.tiles.length !== width * height) {
+    throw new Error(`map must contain ${width * height} tiles, got ${data.tiles.length}`)
+  }
+
+  return {
+    width,
+    height,
+    portals: Array.isArray(data.portals) ? data.portals : [],
+    tiles: data.tiles.map(cell => normalizeCell(cell)),
+  }
+}
+
+const normalizeAutosaveData = data => {
+  const { width, height } = normalizeDimensions(data)
+  if (!Array.isArray(data?.cells) || data.cells.length !== width * height) {
+    throw new Error('autosave cells are invalid')
+  }
+
+  return {
+    width,
+    height,
+    cells: data.cells.map(cell => normalizeCell(cell)),
+    portalPairs: Array.isArray(data.portalPairs) ? data.portalPairs : [],
+    updatedAt: data.updatedAt || null,
+  }
+}
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -67,35 +105,42 @@ export const useAppStore = defineStore('app', {
     portalPairs: [],
     autosaveLoaded: false,
     autosaveUpdatedAt: null,
+    loadStatus: '',
+    loadError: '',
     syncToGameInProgress: false,
     syncToGameStatus: '',
     syncToGameError: '',
     syncToGameUpdatedAt: null,
+    brushActive: false,
+    lastBrushedCell: null,
   }),
   actions: {
     init () {
-      if (this.restoreAutosave()) {
-        return
-      }
+      if (this.restoreAutosave()) return
       this.cells = createCells(this.width, this.height)
       this.persistAutosave()
     },
     updateSize (width, height) {
       const nextWidth = Number(width)
       const nextHeight = Number(height)
-      if (
-        !Number.isInteger(nextWidth)
-        || !Number.isInteger(nextHeight)
-        || nextWidth < 1
-        || nextHeight < 1
-      ) {
-        return
-      }
+      if (!Number.isInteger(nextWidth) || !Number.isInteger(nextHeight) || nextWidth < 1 || nextHeight < 1) return
 
       this.width = nextWidth
       this.height = nextHeight
       this.cells = createCells(nextWidth, nextHeight)
       this.portalPairs = []
+      this.persistAutosave()
+    },
+    clearField () {
+      this.stopBrush()
+      this.cells = createCells(this.width, this.height)
+      this.portalPairs = []
+      this.highlighted = []
+      this.loadStatus = ''
+      this.loadError = ''
+      this.syncToGameStatus = ''
+      this.syncToGameError = ''
+      this.syncToGameUpdatedAt = null
       this.persistAutosave()
     },
     getIndex (i, j) {
@@ -105,19 +150,43 @@ export const useAppStore = defineStore('app', {
       return this.cells[this.getIndex(i, j)]
     },
     paintCell (i, j) {
-      const index = i * this.width + j
+      const index = this.getIndex(i, j)
+      if (!this.cells[index]) return
       this.cells[index].type = this.selectedCellType
       this.persistAutosave()
     },
     addWall (i, j) {
-      const index = i * this.width + j
+      const index = this.getIndex(i, j)
+      if (!this.cells[index]) return
       if (this.selectedWallType === 4) {
         this.cells[index].walls = [false, false, false, false]
         this.persistAutosave()
         return
       }
+      if (this.selectedWallType < 0 || this.selectedWallType > 3) return
       this.cells[index].walls[this.selectedWallType] = true
       this.persistAutosave()
+    },
+    applySelectedTool (i, j) {
+      const key = i + '-' + j
+      if (this.lastBrushedCell === key) return
+
+      this.lastBrushedCell = key
+      if (this.selectedCellType !== -1) this.paintCell(i, j)
+      if (this.selectedWallType !== -1) this.addWall(i, j)
+    },
+    startBrush (i, j) {
+      this.brushActive = true
+      this.lastBrushedCell = null
+      this.applySelectedTool(i, j)
+    },
+    continueBrush (i, j) {
+      if (!this.brushActive) return
+      this.applySelectedTool(i, j)
+    },
+    stopBrush () {
+      this.brushActive = false
+      this.lastBrushedCell = null
     },
     getPortals (exists = false) {
       const pType = exists ? 9 : 7
@@ -128,12 +197,7 @@ export const useAppStore = defineStore('app', {
           const cell2 = this.getCell(i + 1, j)
           const cell3 = this.getCell(i, j + 1)
           const cell4 = this.getCell(i + 1, j + 1)
-          if (
-            cell1.type === pType
-            && cell2.type === pType
-            && cell3.type === pType
-            && cell4.type === pType
-          ) {
+          if (cell1.type === pType && cell2.type === pType && cell3.type === pType && cell4.type === pType) {
             portals.push([[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]])
           }
         }
@@ -151,23 +215,14 @@ export const useAppStore = defineStore('app', {
     },
     restorePortalPairs (portals = []) {
       this.portalPairs = []
-      const entrances = this
-        .getPortals(false)
-        .map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
-      const exits = this
-        .getPortals(true)
-        .map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
+      const entrances = this.getPortals(false).map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
+      const exits = this.getPortals(true).map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
 
       for (const portal of portals) {
-        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) {
-          continue
-        }
-
+        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) continue
         const entranceIndex = entrances.indexOf(this.portalKey(portal.entrance))
         const exitIndex = exits.indexOf(this.portalKey(portal.exit))
-        if (entranceIndex !== -1 && exitIndex !== -1) {
-          this.portalPairs.push(entranceIndex + '-' + exitIndex)
-        }
+        if (entranceIndex !== -1 && exitIndex !== -1) this.portalPairs.push(entranceIndex + '-' + exitIndex)
       }
     },
     buildExportState () {
@@ -178,15 +233,10 @@ export const useAppStore = defineStore('app', {
 
       for (const pair of this.portalPairs) {
         const [inI, outI] = pair.split('-').map(Number)
-        if (!entrances[inI] || !exits[outI]) {
-          continue
-        }
-
-        const entrance = entrances[inI].map(([i, j]) => this.getIndex(i, j))
-        const exit = exits[outI].map(([i, j]) => this.getIndex(i, j))
+        if (!entrances[inI] || !exits[outI]) continue
         state.portals.push({
-          entrance,
-          exit,
+          entrance: entrances[inI].map(([i, j]) => this.getIndex(i, j)),
+          exit: exits[outI].map(([i, j]) => this.getIndex(i, j)),
         })
       }
 
@@ -195,10 +245,7 @@ export const useAppStore = defineStore('app', {
     save () {
       const json = JSON.stringify(this.buildExportState())
       const element = document.createElement('a')
-      element.setAttribute(
-        'href',
-        'data:text/plain;charset=utf-8,' + encodeURIComponent(json),
-      )
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json))
       element.setAttribute('download', 'map.json')
       element.style.display = 'none'
       document.body.append(element)
@@ -213,16 +260,12 @@ export const useAppStore = defineStore('app', {
       try {
         const response = await fetch(MAP_SYNC_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.buildExportState()),
         })
 
         const result = await response.json().catch(() => ({}))
-        if (!response.ok || result.ok === false) {
-          throw new Error(result.error || `Sync failed with status ${response.status}`)
-        }
+        if (!response.ok || result.ok === false) throw new Error(result.error || `Sync failed with status ${response.status}`)
 
         this.syncToGameUpdatedAt = new Date().toISOString()
         this.syncToGameStatus = 'map synced to game'
@@ -237,77 +280,57 @@ export const useAppStore = defineStore('app', {
     },
     setPortalPair (entranceIndex, exitIndex) {
       this.portalPairs = this.portalPairs.filter(pair => !pair.startsWith(entranceIndex + '-'))
-      if (Number.isInteger(exitIndex) && exitIndex >= 0) {
-        this.portalPairs.push(entranceIndex + '-' + exitIndex)
-      }
+      if (Number.isInteger(exitIndex) && exitIndex >= 0) this.portalPairs.push(entranceIndex + '-' + exitIndex)
       this.persistAutosave()
     },
     async load (file) {
-      const data = JSON.parse(await file.text())
-      const width = Number(data.width)
-      const height = Number(data.height)
-      if (!Number.isInteger(width) || !Number.isInteger(height)) {
-        return
-      }
+      this.loadStatus = ''
+      this.loadError = ''
+      try {
+        const selectedFile = Array.isArray(file) ? file[0] : file
+        if (!selectedFile) return
 
-      this.width = width
-      this.height = height
-      this.cells = Array.isArray(data.tiles) && data.tiles.length === width * height
-        ? data.tiles.map(cell => normalizeCell(cell))
-        : createCells(width, height)
-      this.restorePortalPairs(data.portals)
-      this.persistAutosave()
+        const data = normalizeMapData(JSON.parse(await selectedFile.text()))
+        this.stopBrush()
+        this.width = data.width
+        this.height = data.height
+        this.cells = data.tiles
+        this.highlighted = []
+        this.restorePortalPairs(data.portals)
+        this.persistAutosave()
+        this.loadStatus = 'map loaded'
+      } catch (error) {
+        this.loadError = error.message || String(error)
+      }
     },
     persistAutosave () {
-      if (typeof localStorage === 'undefined') {
-        return
-      }
+      if (typeof localStorage === 'undefined') return
 
       const updatedAt = new Date().toISOString()
-      const data = {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
         version: 1,
         updatedAt,
         width: this.width,
         height: this.height,
         cells: this.cells.map(cell => normalizeCell(cell)),
         portalPairs: [...this.portalPairs],
-      }
-
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data))
+      }))
       this.autosaveUpdatedAt = updatedAt
     },
     restoreAutosave () {
-      if (typeof localStorage === 'undefined') {
-        return false
-      }
+      if (typeof localStorage === 'undefined') return false
 
       const stored = localStorage.getItem(AUTOSAVE_KEY)
-      if (!stored) {
-        return false
-      }
+      if (!stored) return false
 
       try {
-        const data = JSON.parse(stored)
-        const width = Number(data.width)
-        const height = Number(data.height)
-
-        if (
-          !Number.isInteger(width)
-          || !Number.isInteger(height)
-          || width < 1
-          || height < 1
-          || !Array.isArray(data.cells)
-          || data.cells.length !== width * height
-        ) {
-          return false
-        }
-
-        this.width = width
-        this.height = height
-        this.cells = data.cells.map(cell => normalizeCell(cell))
-        this.portalPairs = Array.isArray(data.portalPairs) ? data.portalPairs : []
+        const data = normalizeAutosaveData(JSON.parse(stored))
+        this.width = data.width
+        this.height = data.height
+        this.cells = data.cells
+        this.portalPairs = data.portalPairs
         this.autosaveLoaded = true
-        this.autosaveUpdatedAt = data.updatedAt || null
+        this.autosaveUpdatedAt = data.updatedAt
         return true
       } catch (error) {
         console.error('Failed to restore map autosave:', error)
@@ -315,9 +338,7 @@ export const useAppStore = defineStore('app', {
       }
     },
     clearAutosave () {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(AUTOSAVE_KEY)
-      }
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(AUTOSAVE_KEY)
       this.autosaveLoaded = false
       this.autosaveUpdatedAt = null
     },
