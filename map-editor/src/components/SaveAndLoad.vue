@@ -1,42 +1,16 @@
 <template>
-<<<<<<< HEAD
-    <v-row>
-        <v-col cols="3" align-self="center" align="center">
-            <v-btn @click="store.save()" prepend-icon="mdi-download" size="large">save</v-btn>
-        </v-col>
-        <v-col cols="4">
-            <v-file-input @update:model-value="load" label="Load" prepend-icon="mdi-upload" hide-details></v-file-input>
-        </v-col>
-        <v-col cols="3" align-self="center" align="center">
-            <v-btn
-                @click="syncToGame"
-                :loading="store.syncToGameInProgress"
-                prepend-icon="mdi-sync"
-                color="primary"
-                variant="tonal"
-            >sync to game</v-btn>
-        </v-col>
-        <v-col cols="2" align-self="center" align="center">
-            <v-btn @click="clearField" icon="mdi-delete-outline" variant="tonal" title="clear field"></v-btn>
-        </v-col>
-    </v-row>
-    <v-row v-if="autosaveStatus || syncStatus" dense>
-        <v-col cols="12" md="6" v-if="autosaveStatus">
-            <v-chip size="small" color="success" variant="tonal">{{ autosaveStatus }}</v-chip>
-        </v-col>
-        <v-col cols="12" md="6" v-if="syncStatus">
-            <v-chip size="small" :color="store.syncToGameError ? 'error' : 'primary'" variant="tonal">
-                {{ syncStatus }}
-            </v-chip>
-        </v-col>
-    </v-row>
-=======
   <v-row>
     <v-col align="center" align-self="center" cols="3">
       <v-btn prepend-icon="mdi-download" size="large" @click="store.save()">save</v-btn>
     </v-col>
     <v-col cols="4">
-      <v-file-input hide-details label="Load" prepend-icon="mdi-upload" @update:model-value="load" />
+      <v-file-input
+        accept="application/json,.json"
+        hide-details
+        label="Load JSON"
+        prepend-icon="mdi-upload"
+        @update:model-value="load"
+      />
     </v-col>
     <v-col align="center" align-self="center" cols="3">
       <v-btn
@@ -50,20 +24,24 @@
       </v-btn>
     </v-col>
     <v-col align="center" align-self="center" cols="2">
-      <v-btn icon="mdi-delete-outline" variant="tonal" @click="clearAutosave" />
+      <v-btn icon="mdi-delete-outline" title="clear field" variant="tonal" @click="clearField" />
     </v-col>
   </v-row>
-  <v-row v-if="autosaveStatus || syncStatus" dense>
-    <v-col v-if="autosaveStatus" cols="12" md="6">
+  <v-row v-if="autosaveStatus || loadStatus || syncStatus" dense>
+    <v-col v-if="autosaveStatus" cols="12" md="4">
       <v-chip color="success" size="small" variant="tonal">{{ autosaveStatus }}</v-chip>
     </v-col>
-    <v-col v-if="syncStatus" cols="12" md="6">
+    <v-col v-if="loadStatus" cols="12" md="4">
+      <v-chip :color="store.loadError ? 'error' : 'info'" size="small" variant="tonal">
+        {{ loadStatus }}
+      </v-chip>
+    </v-col>
+    <v-col v-if="syncStatus" cols="12" md="4">
       <v-chip :color="store.syncToGameError ? 'error' : 'primary'" size="small" variant="tonal">
         {{ syncStatus }}
       </v-chip>
     </v-col>
   </v-row>
->>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 </template>
 
 <script setup>
@@ -73,19 +51,12 @@
   const store = useAppStore()
 
   const load = $event => {
-    const file = Array.isArray($event) ? $event[0] : $event
-    if (file) store.load(file)
+    store.load($event)
   }
 
-<<<<<<< HEAD
-const clearField = () => {
-    store.clearField();
-};
-=======
-  const clearAutosave = () => {
-    store.clearAutosave()
+  const clearField = () => {
+    store.clearField()
   }
->>>>>>> da7a9c7df008230ea9f74e71a0ddd26ab4153897
 
   const syncToGame = () => {
     store.syncToGame()
@@ -94,6 +65,11 @@ const clearField = () => {
   const autosaveStatus = computed(() => {
     if (!store.autosaveUpdatedAt) return ''
     return 'draft saved ' + new Date(store.autosaveUpdatedAt).toLocaleString()
+  })
+
+  const loadStatus = computed(() => {
+    if (store.loadError) return 'load failed: ' + store.loadError
+    return store.loadStatus
   })
 
   const syncStatus = computed(() => {
