@@ -22,15 +22,35 @@
   const store = useAppStore()
   const lastPointerCell = ref(null)
 
-  const cellFromPointer = event => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null
+  const gridBounds = grid => {
+    const firstTile = grid.firstElementChild
+    const lastTile = grid.lastElementChild
+    if (!firstTile || !lastTile) return null
+
+    const firstRect = firstTile.getBoundingClientRect()
+    const lastRect = lastTile.getBoundingClientRect()
 
     return {
-      i: Math.min(store.height - 1, Math.floor((y / rect.height) * store.height)),
-      j: Math.min(store.width - 1, Math.floor((x / rect.width) * store.width)),
+      left: firstRect.left,
+      top: firstRect.top,
+      right: lastRect.right,
+      bottom: lastRect.bottom,
+      cellWidth: firstRect.width,
+      cellHeight: firstRect.height,
+    }
+  }
+
+  const cellFromPointer = event => {
+    const bounds = gridBounds(event.currentTarget)
+    if (!bounds || bounds.cellWidth <= 0 || bounds.cellHeight <= 0) return null
+
+    const x = event.clientX - bounds.left
+    const y = event.clientY - bounds.top
+    if (x < 0 || y < 0 || event.clientX > bounds.right || event.clientY > bounds.bottom) return null
+
+    return {
+      i: Math.min(store.height - 1, Math.floor(y / bounds.cellHeight)),
+      j: Math.min(store.width - 1, Math.floor(x / bounds.cellWidth)),
     }
   }
 
@@ -60,10 +80,10 @@
   const startBrush = event => {
     if (event.button !== 0) return
 
-    event.currentTarget.setPointerCapture(event.pointerId)
     const cell = cellFromPointer(event)
     if (!cell) return
 
+    event.currentTarget.setPointerCapture(event.pointerId)
     lastPointerCell.value = cell
     store.startBrush(cell.i, cell.j)
   }
