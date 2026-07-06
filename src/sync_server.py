@@ -6,10 +6,13 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-WORK_DIR = Path(os.environ.get("WORK_DIR", "/work"))
-GAME_DIR = Path(os.environ.get("GAME_DIR", "/game"))
+ROOT = Path(__file__).resolve().parents[1]
+WORK_DIR = Path(os.environ.get("WORK_DIR", ROOT))
+GAME_DIR = Path(os.environ.get("GAME_DIR", ROOT.parent / "gnome-field" / "gnome-field"))
 HOST = os.environ.get("SYNC_API_HOST", "0.0.0.0")
 PORT = int(os.environ.get("SYNC_API_PORT", "3002"))
+MIN_TILE_TYPE = 0
+MAX_TILE_TYPE = 9
 
 SOURCE_MAP = WORK_DIR / "src" / "assets" / "map.json"
 GENERATED_MAP = WORK_DIR / "out" / "map.png"
@@ -35,8 +38,13 @@ def validate_map(data):
     for index, tile in enumerate(tiles):
         if not isinstance(tile, dict):
             raise ValueError(f"tile {index} must be an object")
-        if not isinstance(tile.get("type"), int):
+        tile_type = tile.get("type")
+        if not isinstance(tile_type, int):
             raise ValueError(f"tile {index}.type must be an integer")
+        if tile_type < MIN_TILE_TYPE or tile_type > MAX_TILE_TYPE:
+            raise ValueError(
+                f"tile {index}.type must be between {MIN_TILE_TYPE} and {MAX_TILE_TYPE}"
+            )
         walls = tile.get("walls")
         if not isinstance(walls, list) or len(walls) != 4:
             raise ValueError(f"tile {index}.walls must be an array of 4 booleans")

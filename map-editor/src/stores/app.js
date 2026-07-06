@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 
 const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1'
 const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map'
+const MIN_CELL_TYPE = 0
+const MAX_CELL_TYPE = 9
 
 export class Cell {
   constructor () {
@@ -28,8 +30,15 @@ const createCells = (width, height) => {
   return cells
 }
 
+const normalizeTileType = type => {
+  const normalized = Number(type)
+  return Number.isInteger(normalized) && normalized >= MIN_CELL_TYPE && normalized <= MAX_CELL_TYPE
+    ? normalized
+    : MIN_CELL_TYPE
+}
+
 const normalizeCell = cell => ({
-  type: Number(cell?.type) || 0,
+  type: normalizeTileType(cell?.type),
   walls: Array.isArray(cell?.walls)
     ? [0, 1, 2, 3].map(index => Boolean(cell.walls[index]))
     : [false, false, false, false],
@@ -72,9 +81,20 @@ export const useAppStore = defineStore('app', {
       this.persistAutosave()
     },
     updateSize (width, height) {
-      this.width = width
-      this.height = height
-      this.cells = createCells(width, height)
+      const nextWidth = Number(width)
+      const nextHeight = Number(height)
+      if (
+        !Number.isInteger(nextWidth)
+        || !Number.isInteger(nextHeight)
+        || nextWidth < 1
+        || nextHeight < 1
+      ) {
+        return
+      }
+
+      this.width = nextWidth
+      this.height = nextHeight
+      this.cells = createCells(nextWidth, nextHeight)
       this.portalPairs = []
       this.persistAutosave()
     },
@@ -139,6 +159,10 @@ export const useAppStore = defineStore('app', {
         .map(tiles => this.portalKey(tiles.map(([i, j]) => this.getIndex(i, j))))
 
       for (const portal of portals) {
+        if (!Array.isArray(portal?.entrance) || !Array.isArray(portal?.exit)) {
+          continue
+        }
+
         const entranceIndex = entrances.indexOf(this.portalKey(portal.entrance))
         const exitIndex = exits.indexOf(this.portalKey(portal.exit))
         if (entranceIndex !== -1 && exitIndex !== -1) {
@@ -153,10 +177,7 @@ export const useAppStore = defineStore('app', {
       const exits = this.getPortals(true)
 
       for (const pair of this.portalPairs) {
-        const [inI, outI] = pair.split('-').map(el => {
-          const n = Number(el)
-          return n === 0 ? n : n || el
-        })
+        const [inI, outI] = pair.split('-').map(Number)
         if (!entrances[inI] || !exits[outI]) {
           continue
         }
