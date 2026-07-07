@@ -68,7 +68,6 @@ out/map.png
 Он также обновляет игровые эффекты:
 
 - `paint-explosion.gif`;
-- `paint-explosion.png`;
 - `paint-stain.png`.
 
 ## Редактор Карты

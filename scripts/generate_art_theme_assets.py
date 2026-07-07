@@ -475,7 +475,6 @@ def main() -> None:
     explosion = paint_explosion_frames()
     stain = paint_stain_image()
     GAME_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-    explosion[0].save(GAME_ASSETS_DIR / "paint-explosion.png")
     explosion[0].save(
         GAME_ASSETS_DIR / "paint-explosion.gif",
         save_all=True,
