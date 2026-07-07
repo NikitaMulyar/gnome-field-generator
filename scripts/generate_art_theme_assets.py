@@ -224,7 +224,7 @@ def basement_door_frames() -> list[Image.Image]:
     return frames
 
 
-def bun_frames() -> list[Image.Image]:
+def chemical_flasks_frames() -> list[Image.Image]:
     frames = []
     for frame in range(FRAME_COUNT):
         img = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0))
@@ -455,7 +455,7 @@ def main() -> None:
         "water": water_frames(),
         "papers": papers_frames(),
         "basement-door": basement_door_frames(),
-        "bun": bun_frames(),
+        "chemical-flasks": chemical_flasks_frames(),
         "paint-can": paint_can_frames(),
         "cardboard": cardboard_frames(),
         "scanner": scanner_frames(),

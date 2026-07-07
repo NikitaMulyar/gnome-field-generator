@@ -10,7 +10,7 @@ TEXTURES = {
     0: "water.png",
     1: "papers.png",
     2: "basement-door.png",
-    3: "bun.png",
+    3: "chemical-flasks.png",
     4: "paint-can.png",
     5: "cardboard.png",
     6: "scanner.png",
