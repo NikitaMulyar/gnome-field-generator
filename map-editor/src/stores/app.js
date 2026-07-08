@@ -3,7 +3,21 @@ import { defineStore } from 'pinia'
 import defaultMap from '@/assets/map.json'
 
 const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1'
-const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map'
+const DEFAULT_MAP_SYNC_URL = 'http://localhost:3002/sync-map'
+const DISABLED_MAP_SYNC_VALUES = new Set(['disabled', 'none', 'off', 'false'])
+const normalizeMapSyncUrl = value => {
+  if (typeof value !== 'string') {
+    return DEFAULT_MAP_SYNC_URL
+  }
+
+  const normalized = value.trim()
+  if (DISABLED_MAP_SYNC_VALUES.has(normalized.toLowerCase())) {
+    return ''
+  }
+
+  return normalized || DEFAULT_MAP_SYNC_URL
+}
+const MAP_SYNC_URL = normalizeMapSyncUrl(import.meta.env.VITE_MAP_SYNC_URL)
 const MIN_CELL_TYPE = 0
 const MAX_CELL_TYPE = 9
 
@@ -137,6 +151,10 @@ export const useAppStore = defineStore('app', {
     brushActive: false,
     lastBrushedCell: null,
   }),
+  getters: {
+    isMapSyncAvailable: () => Boolean(MAP_SYNC_URL),
+    mapSyncUrl: () => MAP_SYNC_URL,
+  },
   actions: {
     init () {
       if (this.restoreAutosave()) {
@@ -308,6 +326,12 @@ export const useAppStore = defineStore('app', {
       element.remove()
     },
     async syncToGame () {
+      if (!MAP_SYNC_URL) {
+        this.syncToGameStatus = ''
+        this.syncToGameError = 'sync API is disabled in this static build. Use save/load JSON or run the editor locally with map-sync-api.'
+        return
+      }
+
       this.syncToGameInProgress = true
       this.syncToGameStatus = ''
       this.syncToGameError = ''

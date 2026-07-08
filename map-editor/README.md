@@ -43,6 +43,12 @@ http://127.0.0.1:3001/
 VITE_BASE_PATH=/gnome-field-generator/ yarn dev
 ```
 
+Для проверки статического Pages-режима без sync API:
+
+```bash
+VITE_BASE_PATH=/gnome-field-generator/ VITE_MAP_SYNC_URL=disabled yarn dev
+```
+
 ## Команды
 
 ```bash
@@ -52,6 +58,13 @@ yarn preview
 ```
 
 `yarn lint` может автоформатировать файлы. После запуска проверяй `git diff`.
+
+Ресурсы карты лежат в корневой папке generator. Проверить, что они совпадают с игровой репой:
+
+```bash
+cd ..
+python3 scripts/check_art_camp_assets.py
+```
 
 ## Как пользоваться
 
@@ -149,6 +162,14 @@ URL sync API можно переопределить через переменн
 ```bash
 VITE_MAP_SYNC_URL=http://localhost:3002/sync-map yarn dev
 ```
+
+В GitHub Pages-сборке backend недоступен, поэтому workflow передает:
+
+```bash
+VITE_MAP_SYNC_URL=disabled
+```
+
+В этом режиме кнопка `sync to game` отключена. Для настоящей синхронизации используй локальный Docker или отдельный внешний backend.
 
 ## Типы клеток
 

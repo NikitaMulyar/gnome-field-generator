@@ -428,8 +428,6 @@ def save_asset(name: str, frames: list[Image.Image], animated: bool = True) -> N
                 loop=0,
                 disposal=2,
             )
-        elif gif_path.exists():
-            gif_path.unlink()
 
 
 def cleanup_stale_assets() -> None:

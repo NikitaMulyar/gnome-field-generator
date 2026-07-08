@@ -15,8 +15,10 @@
     <v-col align="center" align-self="center" cols="3">
       <v-btn
         color="primary"
+        :disabled="!store.isMapSyncAvailable"
         :loading="store.syncToGameInProgress"
         prepend-icon="mdi-sync"
+        :title="syncButtonTitle"
         variant="tonal"
         @click="syncToGame"
       >
@@ -61,6 +63,10 @@
   const syncToGame = () => {
     store.syncToGame()
   }
+
+  const syncButtonTitle = computed(() => store.isMapSyncAvailable
+    ? 'send map to ' + store.mapSyncUrl
+    : 'sync API is disabled in this static build')
 
   const autosaveStatus = computed(() => {
     if (!store.autosaveUpdatedAt) return ''
