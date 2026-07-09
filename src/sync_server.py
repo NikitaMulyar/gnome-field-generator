@@ -19,6 +19,19 @@ EDITOR_MAP = WORK_DIR / "map-editor" / "src" / "assets" / "map.json"
 GENERATED_MAP = WORK_DIR / "out" / "map.png"
 GAME_MAP = GAME_DIR / "public" / "map.json"
 GAME_IMAGE = GAME_DIR / "src" / "assets" / "map.png"
+SOURCE_TEXTURES = WORK_DIR / "src" / "assets" / "textures" / "art-camp"
+GAME_TEXTURES = GAME_DIR / "src" / "assets" / "map-tiles" / "art-camp"
+TEXTURE_EXTENSIONS = {".png", ".gif", ".jpg", ".jpeg"}
+
+
+def sync_textures():
+    if not SOURCE_TEXTURES.is_dir():
+        raise RuntimeError(f"Texture directory not found: {SOURCE_TEXTURES}")
+
+    GAME_TEXTURES.mkdir(parents=True, exist_ok=True)
+    for source in SOURCE_TEXTURES.iterdir():
+        if source.is_file() and source.suffix.lower() in TEXTURE_EXTENSIONS:
+            shutil.copy2(source, GAME_TEXTURES / source.name)
 
 
 def validate_map(data):
@@ -118,12 +131,14 @@ class SyncHandler(BaseHTTPRequestHandler):
             GAME_IMAGE.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(SOURCE_MAP, GAME_MAP)
             shutil.copyfile(GENERATED_MAP, GAME_IMAGE)
+            sync_textures()
 
             self.respond_json({
                 "ok": True,
                 "editorMapJson": str(EDITOR_MAP),
                 "mapJson": str(GAME_MAP),
                 "mapImage": str(GAME_IMAGE),
+                "textures": str(GAME_TEXTURES),
             })
         except Exception as error:
             self.respond_json({"ok": False, "error": str(error)}, status=500)

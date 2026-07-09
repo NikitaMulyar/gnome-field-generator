@@ -224,25 +224,6 @@ def basement_door_frames() -> list[Image.Image]:
     return frames
 
 
-def chemical_flasks_frames() -> list[Image.Image]:
-    frames = []
-    for frame in range(FRAME_COUNT):
-        img = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img, "RGBA")
-        lift = math.sin(frame / FRAME_COUNT * math.tau) * 0.5
-        draw.ellipse((11, 39 + lift, 54, 55 + lift), fill=(9, 8, 15, 80))
-        draw.ellipse((10, 18, 55, 49), fill=(184, 97, 43, 255), outline=(74, 38, 30, 180), width=2)
-        draw.ellipse((13, 14, 52, 43), fill=(250, 175, 73, 255), outline=(91, 45, 31, 150), width=2)
-        draw.arc((18, 17, 34, 37), 195, 337, fill=(255, 234, 150, 190), width=2)
-        draw.arc((30, 15, 48, 36), 195, 337, fill=(255, 234, 150, 180), width=2)
-        for idx, point in enumerate(((22, 25), (31, 21), (40, 27), (28, 32), (45, 34))):
-            dx = math.sin((frame + idx) / FRAME_COUNT * math.tau) * 0.4
-            draw.ellipse((point[0] + dx - 1, point[1] - 1, point[0] + dx + 2, point[1] + 2), fill=(108, 70, 38, 145))
-        draw.arc((16, 31, 49, 50), 10, 170, fill=(146, 70, 43, 90), width=2)
-        frames.append(img)
-    return frames
-
-
 def paint_can_frames() -> list[Image.Image]:
     frames = []
     for frame in range(FRAME_COUNT):
@@ -453,7 +434,6 @@ def main() -> None:
         "water": water_frames(),
         "papers": papers_frames(),
         "basement-door": basement_door_frames(),
-        "chemical-flasks": chemical_flasks_frames(),
         "paint-can": paint_can_frames(),
         "cardboard": cardboard_frames(),
         "scanner": scanner_frames(),
