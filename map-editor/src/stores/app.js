@@ -127,7 +127,7 @@ export const useAppStore = defineStore('app', {
       { color: '#6d9eeb', code: 0, description: 'Water' },
       { color: '#9d632c', code: 1, description: 'Stone' },
       { color: '#c27ba0', code: 2, description: 'Entrance' },
-      { color: '#b7b7b7', code: 3, description: 'Cliff' },
+      { color: '#b7b7b7', code: 3, description: 'Bricks' },
       { color: '#ff0000', code: 4, description: 'Bomb' },
       { color: '#fff2cc', code: 5, description: 'Sand' },
       { color: '#8e7cc3', code: 6, description: 'Mole' },
