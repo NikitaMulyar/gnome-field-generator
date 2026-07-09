@@ -15,6 +15,7 @@ MIN_TILE_TYPE = 0
 MAX_TILE_TYPE = 9
 
 SOURCE_MAP = WORK_DIR / "src" / "assets" / "map.json"
+EDITOR_MAP = WORK_DIR / "map-editor" / "src" / "assets" / "map.json"
 GENERATED_MAP = WORK_DIR / "out" / "map.png"
 GAME_MAP = GAME_DIR / "public" / "map.json"
 GAME_IMAGE = GAME_DIR / "src" / "assets" / "map.png"
@@ -105,6 +106,8 @@ class SyncHandler(BaseHTTPRequestHandler):
                 json.dumps(map_data, ensure_ascii=False, separators=(",", ":")),
                 encoding="utf-8",
             )
+            EDITOR_MAP.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(SOURCE_MAP, EDITOR_MAP)
 
             subprocess.run([sys.executable, "src/generate.py"], cwd=WORK_DIR, check=True)
 
@@ -118,6 +121,7 @@ class SyncHandler(BaseHTTPRequestHandler):
 
             self.respond_json({
                 "ok": True,
+                "editorMapJson": str(EDITOR_MAP),
                 "mapJson": str(GAME_MAP),
                 "mapImage": str(GAME_IMAGE),
             })

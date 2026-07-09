@@ -224,7 +224,7 @@ def basement_door_frames() -> list[Image.Image]:
     return frames
 
 
-def bun_frames() -> list[Image.Image]:
+def chemical_flasks_frames() -> list[Image.Image]:
     frames = []
     for frame in range(FRAME_COUNT):
         img = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0))
@@ -428,8 +428,6 @@ def save_asset(name: str, frames: list[Image.Image], animated: bool = True) -> N
                 loop=0,
                 disposal=2,
             )
-        elif gif_path.exists():
-            gif_path.unlink()
 
 
 def cleanup_stale_assets() -> None:
@@ -455,7 +453,7 @@ def main() -> None:
         "water": water_frames(),
         "papers": papers_frames(),
         "basement-door": basement_door_frames(),
-        "bun": bun_frames(),
+        "chemical-flasks": chemical_flasks_frames(),
         "paint-can": paint_can_frames(),
         "cardboard": cardboard_frames(),
         "scanner": scanner_frames(),
@@ -475,7 +473,6 @@ def main() -> None:
     explosion = paint_explosion_frames()
     stain = paint_stain_image()
     GAME_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-    explosion[0].save(GAME_ASSETS_DIR / "paint-explosion.png")
     explosion[0].save(
         GAME_ASSETS_DIR / "paint-explosion.gif",
         save_all=True,

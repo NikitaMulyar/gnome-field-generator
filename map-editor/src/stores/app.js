@@ -1,8 +1,23 @@
 // Utilities
 import { defineStore } from 'pinia'
+import defaultMap from '@/assets/map.json'
 
 const AUTOSAVE_KEY = 'gnome-field-generator.map-editor.autosave.v1'
-const MAP_SYNC_URL = import.meta.env.VITE_MAP_SYNC_URL || 'http://localhost:3002/sync-map'
+const DEFAULT_MAP_SYNC_URL = 'http://localhost:3002/sync-map'
+const DISABLED_MAP_SYNC_VALUES = new Set(['disabled', 'none', 'off', 'false'])
+const normalizeMapSyncUrl = value => {
+  if (typeof value !== 'string') {
+    return DEFAULT_MAP_SYNC_URL
+  }
+
+  const normalized = value.trim()
+  if (DISABLED_MAP_SYNC_VALUES.has(normalized.toLowerCase())) {
+    return ''
+  }
+
+  return normalized || DEFAULT_MAP_SYNC_URL
+}
+const MAP_SYNC_URL = normalizeMapSyncUrl(import.meta.env.VITE_MAP_SYNC_URL)
 const MIN_CELL_TYPE = 0
 const MAX_CELL_TYPE = 9
 
@@ -75,7 +90,21 @@ const normalizeMapData = data => {
   }
 }
 
+const mapSignature = data => JSON.stringify({
+  width: data.width,
+  height: data.height,
+  portals: data.portals,
+  tiles: data.tiles.map(cell => normalizeCell(cell)),
+})
+
+const DEFAULT_MAP_DATA = normalizeMapData(defaultMap)
+const DEFAULT_MAP_SIGNATURE = mapSignature(DEFAULT_MAP_DATA)
+
 const normalizeAutosaveData = data => {
+  if (data?.baseMapSignature !== DEFAULT_MAP_SIGNATURE) {
+    throw new Error('autosave belongs to another source map')
+  }
+
   const { width, height } = normalizeDimensions(data)
   if (!Array.isArray(data?.cells) || data.cells.length !== width * height) {
     throw new Error('autosave cells are invalid')
@@ -122,13 +151,25 @@ export const useAppStore = defineStore('app', {
     brushActive: false,
     lastBrushedCell: null,
   }),
+  getters: {
+    isMapSyncAvailable: () => Boolean(MAP_SYNC_URL),
+    mapSyncUrl: () => MAP_SYNC_URL,
+  },
   actions: {
     init () {
       if (this.restoreAutosave()) {
         return
       }
-      this.cells = createCells(this.width, this.height)
+      this.applyMapData(DEFAULT_MAP_DATA)
       this.persistAutosave()
+    },
+    applyMapData (data) {
+      const normalized = normalizeMapData(data)
+      this.width = normalized.width
+      this.height = normalized.height
+      this.cells = normalized.tiles.map(cell => normalizeCell(cell))
+      this.highlighted = []
+      this.restorePortalPairs(normalized.portals)
     },
     updateSize (width, height) {
       const nextWidth = Number(width)
@@ -285,6 +326,12 @@ export const useAppStore = defineStore('app', {
       element.remove()
     },
     async syncToGame () {
+      if (!MAP_SYNC_URL) {
+        this.syncToGameStatus = ''
+        this.syncToGameError = 'sync API is disabled in this static build. Use save/load JSON or run the editor locally with map-sync-api.'
+        return
+      }
+
       this.syncToGameInProgress = true
       this.syncToGameStatus = ''
       this.syncToGameError = ''
@@ -330,11 +377,7 @@ export const useAppStore = defineStore('app', {
 
         const data = normalizeMapData(JSON.parse(await selectedFile.text()))
         this.stopBrush()
-        this.width = data.width
-        this.height = data.height
-        this.cells = data.tiles
-        this.highlighted = []
-        this.restorePortalPairs(data.portals)
+        this.applyMapData(data)
         this.persistAutosave()
         this.loadStatus = 'map loaded'
       } catch (error) {
@@ -349,6 +392,7 @@ export const useAppStore = defineStore('app', {
       const updatedAt = new Date().toISOString()
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
         version: 1,
+        baseMapSignature: DEFAULT_MAP_SIGNATURE,
         updatedAt,
         width: this.width,
         height: this.height,

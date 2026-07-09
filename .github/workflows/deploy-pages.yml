@@ -1,0 +1,70 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: map-editor/yarn.lock
+
+      - name: Setup Yarn
+        run: corepack prepare yarn@1.22.22 --activate
+
+      - name: Install dependencies
+        working-directory: map-editor
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        working-directory: map-editor
+        run: yarn build
+        env:
+          VITE_BASE_PATH: /gnome-field-generator/
+          VITE_MAP_SYNC_URL: disabled
+
+      - name: Add SPA fallback
+        working-directory: map-editor
+        run: cp dist/index.html dist/404.html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: map-editor/dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

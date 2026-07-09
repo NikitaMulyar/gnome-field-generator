@@ -68,8 +68,24 @@ out/map.png
 Он также обновляет игровые эффекты:
 
 - `paint-explosion.gif`;
-- `paint-explosion.png`;
 - `paint-stain.png`.
+
+## Проверка Совпадения Ресурсов
+
+Текущий набор `art-camp` должен совпадать в generator и game:
+
+```text
+src/assets/textures/art-camp/
+../gnome-field/gnome-field/src/assets/map-tiles/art-camp/
+```
+
+Проверка имен файлов и SHA-256:
+
+```bash
+python3 scripts/check_art_camp_assets.py
+```
+
+Если скрипт пишет `art-camp assets are in sync`, generator и game используют одинаковые ресурсы карты.
 
 ## Редактор Карты
 
@@ -90,6 +106,18 @@ http://127.0.0.1:3001/
 ```bash
 VITE_BASE_PATH=/gnome-field-generator/ yarn dev
 ```
+
+## Деплой На GitHub Pages
+
+Основной способ деплоя - GitHub Actions workflow:
+
+```text
+.github/workflows/deploy-pages.yml
+```
+
+Подробная инструкция: [GITHUB_PAGES.md](GITHUB_PAGES.md).
+
+Pages-сборка использует `VITE_BASE_PATH=/gnome-field-generator/` и `VITE_MAP_SYNC_URL=disabled`, потому что GitHub Pages не запускает backend и не может выполнить `sync to game`.
 
 ## Autosave И Sync To Game
 
@@ -130,7 +158,7 @@ yarn build
 | `0` | вода |
 | `1` | листочки |
 | `2` | дверь в подвал |
-| `3` | булочка |
+| `3` | химические колбы |
 | `4` | банка краски |
 | `5` | картон |
 | `6` | сканер |
